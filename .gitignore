@@ -1,0 +1,13 @@
+# build output and downloads (finished builds go on the GitHub Releases page, not in the repository)
+desktop/node_modules/
+desktop/dist/
+desktop/release/
+desktop/app.html
+desktop/parts-library-skipped.txt
+manual/*.pdf
+*.zip
+*.exe
+*.blockmap
+*.fzpz
+.DS_Store
+Thumbs.db

@@ -1,0 +1,49 @@
+WaughForm 3D - desktop app build notes
+© 2026 David John Waugh
+
+The app is the page ..\WaughForm_3D.html wrapped as a Windows program (Electron).
+After changing WaughForm_3D.html, rebuild the app:
+
+  1. Open a terminal in this folder (Documents\claude code\desktop)
+  2. Run:   npm run dist
+
+This copies the latest WaughForm_3D.html into the app and produces, in the "dist" folder:
+  - WaughForm 3D Setup 1.0.0.exe     installer (Start menu + desktop shortcut, uninstall via Settings > Apps)
+  - WaughForm 3D Portable 1.0.0.exe  single file, runs without installing (good for a USB stick)
+  - win-unpacked\WaughForm 3D.exe    the unpacked app, for quick testing
+
+To try changes without building:  npm start
+
+The Enclosure Wizard's geometry engine (Manifold, Apache-2.0) is embedded inside WaughForm_3D.html.
+Its files live in ..\vendor\manifold-3d. To update it, replace those files and run, in the
+"claude code" folder:   node tools\embed-manifold.js
+
+To release a new version, raise "version" in package.json (e.g. 1.0.1) before building.
+Update the version line in README.txt too, and send README.txt (as "README - WaughForm 3D.txt")
+along with the .exe file.
+
+User manual (PDF): edit ..\manual\manual.html (screenshots are in ..\manual\shots), then in the
+"claude code" folder run:   desktop\node_modules\electron\dist\electron.exe tools\make-manual.js
+It writes "manual\WaughForm 3D User Manual.pdf" with the version from package.json in the footer.
+Put it in the release zip with the .exe files, README, LICENSE.txt and checksums (add its SHA-256 to the list).
+
+Licence: WaughForm 3D is GPL v3 or later (LICENSE.txt, shown by the installer). The built-in Manifold and
+Anthropic SDK are Apache-2.0 and the parts library is CC BY-SA 3.0: see THIRD-PARTY-NOTICES.md on GitHub.
+
+Parts library (parts-library.json, built into the app): made from the Fritzing parts installed on this
+computer. To remake it (e.g. after a Fritzing update), in the "claude code" folder run:
+  desktop\node_modules\electron\dist\electron.exe tools\build-parts-library.js
+It takes about 3 minutes and writes desktop\parts-library.json (parts that couldn't be read, mostly
+PCB outlines and mechanical parts with no pins, are listed in parts-library-skipped.txt).
+The Fritzing parts are © Fritzing contributors, CC BY-SA 3.0: the library keeps that credit.
+To test the app as if Fritzing weren't installed, set WF_NO_FRITZING=1 before starting it.
+Also copy parts-library.json next to ..\WaughForm_3D.html: the web-page version asks for it once
+(on the first "Browse parts...") and keeps it in the browser.
+
+First-time setup on another PC: install Node.js, then in this folder run
+  npm install
+  node node_modules\electron\install.js
+(needs the internet once; the finished app never does).
+
+Note: the .exe files are not code-signed, so Windows may show "Windows protected your PC"
+the first time. Click "More info" then "Run anyway".

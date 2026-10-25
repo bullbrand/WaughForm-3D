@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WaughForm 3D User Manual</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --ink:#1d2330; --muted:#5c6575; --accent:#1e5af0; --line:#d9dee7; --soft:#f3f6fb; --warn:#c25e00; }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.5 "Segoe UI", system-ui, sans-serif; color: var(--ink); margin: 0; }
+  h1, h2, h3 { line-height: 1.25; }
+  h2 { font-size: 19pt; margin: 0 0 8pt; padding-bottom: 5pt; border-bottom: 2.5pt solid var(--accent); break-before: page; }
+  h2 .n { color: var(--accent); margin-right: 6pt; }
+  h2.flow { break-before: auto; margin-top: 22pt; break-after: avoid; }/* short chapters follow on */
+  figure.s img { width: 86%; margin: 0 auto; }
+  figure.s figcaption { padding: 0 7%; }
+  figure.m img { width: 74%; margin: 0 auto; }
+  figure.m figcaption { padding: 0 13%; }
+  figure.xs img { width: 56%; margin: 0 auto; }
+  figure.xs figcaption { padding: 0 22%; }
+  h3 { font-size: 12.5pt; margin: 16pt 0 4pt; color: #11336e; break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin: 2pt 0; }
+  b { font-weight: 650; }
+  kbd { font: 9pt Consolas, monospace; background: #eef1f6; border: 1px solid #c5ccd8; border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; white-space: nowrap; }
+  .btn { font-weight: 600; background: #eef3ff; border: 1px solid #b9cbf5; border-radius: 3px; padding: 0 4px; white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9.8pt; break-inside: auto; }
+  th { text-align: left; background: var(--soft); border-bottom: 1.5px solid var(--line); padding: 4pt 6pt; }
+  td { border-bottom: 1px solid var(--line); padding: 4pt 6pt; vertical-align: top; }
+  table.tight td { padding: 2.5pt 6pt; }
+  tr { break-inside: avoid; }
+  td:first-child { white-space: nowrap; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+  figcaption { font-size: 9pt; color: var(--muted); margin-top: 3pt; }
+  .tip, .warn { border-radius: 5px; padding: 6pt 9pt; margin: 6pt 0 10pt; break-inside: avoid; }
+  .tip { background: #eef6ee; border-left: 4px solid #2e8b57; }
+  .warn { background: #fff4e8; border-left: 4px solid var(--warn); }
+  .tip b:first-child, .warn b:first-child { margin-right: 3pt; }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 24pt; margin: 5pt 0; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 17pt; height: 17pt; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 9pt; text-align: center; line-height: 17pt; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+  code, pre { font: 9pt Consolas, monospace; }
+  /* cover */
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 6mm; }
+  .cover img { width: 34mm; height: 34mm; margin-bottom: 10mm; }
+  .cover h1 { font-size: 40pt; margin: 0; letter-spacing: -0.5pt; }
+  .cover .tagline { font-size: 18pt; font-style: italic; color: var(--accent); margin: 2mm 0 0; }
+  .cover .sub { font-size: 16pt; color: var(--muted); margin: 3mm 0 12mm; }
+  .cover .what { font-size: 12pt; max-width: 135mm; }
+  .cover .foot { margin-top: auto; font-size: 10pt; color: var(--muted); }
+  .toc { break-before: page; }
+  .lead { font-size: 12pt; }
+  .journey > li { margin: 7pt 0; }
+  .welcome { font-size: 13pt; color: #11336e; background: var(--soft); border-radius: 6px; padding: 8pt 12pt; margin: 10pt 0; text-align: center; }
+  .grid4 { margin-bottom: 10pt; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8pt; align-items: end; }
+  .grid4 figure { margin: 0; } .grid4 img { height: 30mm; object-fit: cover; object-position: center top; } .grid4 figcaption { text-align: center; font-weight: 600; color: var(--ink); }
+  .toc h2 { break-before: avoid; }
+  .toc ol { font-size: 12pt; line-height: 1.9; padding-left: 20pt; }
+  .toc ol li::marker { color: var(--accent); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <img src="icon.png" alt="">
+  <h1>WaughForm 3D</h1>
+  <div class="tagline">from idea to object</div>
+  <div class="sub">User Manual · version <span class="ver">1.6.1</span></div>
+  <p class="what">Draw your own things and print them. Or pick the parts for an electronics project, and WaughForm 3D designs a printable box to hold them, shows you how to wire them up, and writes the code to run them.</p>
+  <p class="what">It all runs on your own computer. Only the optional AI features use the internet.</p>
+  <div class="foot">© 2026 David John Waugh. Free software under the GNU GPL v3 or later.</div>
+</section>
+
+<section class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li>Welcome: what can WaughForm 3D do for me?</li>
+    <li>Getting started</li>
+    <li>The screen</li>
+    <li>Moving around</li>
+    <li>Drawing</li>
+    <li>Making it ready to print</li>
+    <li>Saving and opening</li>
+    <li>The Parts Library</li>
+    <li>Filling in a part automatically</li>
+    <li>The Enclosure Wizard</li>
+    <li>Wiring</li>
+    <li>Programming your board (ESPHome)</li>
+    <li>Sharing with other people</li>
+    <li>Keyboard shortcuts</li>
+    <li>Problems and answers</li>
+    <li>Credits</li>
+  </ol>
+</section>
+
+<h2><span class="n">1</span>Welcome: what can WaughForm 3D do for me?</h2>
+<p class="lead">WaughForm 3D takes you from an idea to a finished, working gadget. Use as much or as little of it as you like: each step leads naturally into the next.</p>
+<ol class="steps journey">
+  <li><b>Draw your own things.</b> Sketch a flat shape, pull it up into 3D, round off the edges, cut holes, sweep, slice. If you've used SketchUp you'll feel at home, and if you haven't, you'll be making real parts in minutes.</li>
+  <li><b>Save it and print it.</b> One click checks it's really ready to print (no gaps, nothing floating in mid-air, small enough for your printer) and saves a file your slicer opens straight away.</li>
+  <li><b>Starting an electronics project?</b> Choose your parts from over 2,000 ready-made boards, sensors, screens and modules. You don't need to know the part number: search for what it does, like <i>temperature</i>, <i>gyroscope</i> or <i>screen</i>, and add it to your box with one click.</li>
+  <li><b>One click, one custom box.</b> The Enclosure Wizard arranges your parts and builds a printable case to hold them: holes lined up with the sockets, buttons and sensors, posts that print without supports, and a lid that fits.</li>
+  <li><b>Not sure how to wire it up?</b> Click <b>Wiring</b>. A diagram and a tick-list show exactly which pin goes to which, with safe pins chosen for you and a warning wherever something needs care.</li>
+  <li><b>We'll even write the code.</b> WaughForm 3D writes the program for your board. Install the free <b>ESPHome Device Builder</b> on your computer, click <b>Send to ESPHome</b>, and your device appears there: plug the board in and click Install, and ESPHome builds the program and puts it on the board. Tell it what the gadget should do in your own words, and AI fills in the rest.</li>
+</ol>
+<div class="welcome"><b>Projects made simple:</b> your idea, a little thought, and some help from AI.</div>
+<div class="grid4">
+  <figure><img src="shots/10-round-offset.jpg" alt=""><figcaption>1 · Draw it</figcaption></figure>
+  <figure><img src="shots/04-enclosure-check.jpg" alt=""><figcaption>2 · Build the box</figcaption></figure>
+  <figure><img src="shots/07-wiring.jpg" alt=""><figcaption>3 · Wire it up</figcaption></figure>
+  <figure><img src="shots/16-esphome.jpg" alt=""><figcaption>4 · Make the code</figcaption></figure>
+</div>
+<p>This manual follows the same path: drawing and printing first (chapters 5 to 7), then parts, the box, wiring and the code (chapters 8 to 12).</p>
+
+<h2><span class="n">2</span>Getting started</h2>
+<h3>Which file to use</h3>
+<p>You will have one of two files. Either one is the whole program.</p>
+<table>
+  <tr><th>File</th><th>What it does</th></tr>
+  <tr><td><b>WaughForm 3D Portable <span class="ver">1.6.1</span>.exe</b></td><td>Just double-click it. Nothing is installed, so it also runs from a USB stick.</td></tr>
+  <tr><td><b>WaughForm 3D Setup <span class="ver">1.6.1</span>.exe</b></td><td>Installs the program with a Start menu and desktop shortcut. Uninstall it from <i>Settings › Apps</i>.</td></tr>
+</table>
+<p>It needs Windows 10 or 11 (64-bit). Installing a newer version over an older one keeps your drawings, parts and settings.</p>
+
+<h3>"Windows protected your PC"</h3>
+<p>The first time you run it, Windows may show a blue box, because the program isn't signed by a big company. Click <b>More info</b>, then <b>Run anyway</b>. You only need to do this once.</p>
+
+<h3>Checking the file is genuine</h3>
+<p>The file <i>SHA256 checksums</i> that comes with the program lists a long code for each <code>.exe</code>, like a fingerprint. If even one byte of the file is changed (by a virus or a broken download), the code comes out different.</p>
+<ol class="steps">
+  <li>Open the folder that holds the <code>.exe</code>, click in the address bar at the top, type <code>powershell</code> and press <kbd>Enter</kbd>.</li>
+  <li>Type <code>Get-FileHash "WaughForm 3D Portable <span class="ver">1.6.1</span>.exe"</code> and press <kbd>Enter</kbd>.</li>
+  <li>The code it shows must match the one in the checksums file. If it doesn't, don't run the file.</li>
+</ol>
+<div class="tip"><b>Tip:</b> the codes are also shown on the WaughForm 3D download page on GitHub. Check against those as well: someone who could swap the program could also swap a checksum file sent alongside it.</div>
+
+<h3>First thing to do: tell it your printer</h3>
+<p>Click <span class="btn">Printer</span> on the top bar and pick your printer, or type its build size (X, Y and height Z, in mm). The grid then shows your bed, and the app warns you if anything is too big to print.</p>
+
+<h2><span class="n">3</span>The screen</h2>
+<figure><img src="shots/02-main.jpg" alt=""><figcaption>The main window, here showing an enclosure made by the Enclosure Wizard: the base, and the lid turned over beside it, ready to print. The thin coloured outlines inside are the electronic parts.</figcaption></figure>
+<table>
+  <tr><th>Area</th><th>What it's for</th></tr>
+  <tr><td><b>Top bar</b></td><td>Files (New, Open, Save, Export), Undo/Redo, the view buttons (Iso, Top, Front…), Units, Resize, Printer, Check Model, Hide, Group, and the Enclosure, Parts, Wiring and Help windows. <b>About</b> shows which version you have.</td></tr>
+  <tr><td><b>Toolbar</b></td><td>The drawing tools (see chapter 5), then the view tools, Group/Ungroup, Hide/Unhide, Check Model, Enclosure and Parts. The icons are coloured by kind (below).</td></tr>
+  <tr><td><b>3D view</b></td><td>Your model on the printer bed. Red, green and blue lines are the X, Y and Z axes.</td></tr>
+  <tr><td><b>Status bar</b></td><td>Left: a hint for the tool you're using. Right: the model's size, and the <b>size box</b> where numbers you type appear.</td></tr>
+</table>
+<h3>The toolbar</h3>
+<figure><img src="shots/09-toolbar.jpg" alt=""><figcaption>Hover over any button to see its name, its shortcut key (in yellow) and what it does.</figcaption></figure>
+<p>The icon colours tell you what kind of tool it is: <b style="color:#1c64d6">blue</b> draws (Line, Rectangle, Circle, Arc); <b style="color:#e0620d">orange</b> changes shapes (Push/Pull, Move, Rotate, Round, Offset, Follow Me); <b style="color:#d6336c">red</b> erases and <b style="color:#8e44ad">purple</b> paints; <b style="color:#0b9480">teal</b> measures; <b style="color:#4c5fd5">indigo</b> moves the view; <b style="color:#2b8a3e">green</b> groups and checks; <b style="color:#d48806">amber</b> hides; <b style="color:#7048e8">violet</b> opens the Enclosure Wizard and Parts Library.</p>
+<h3>Arranging the toolbar your way</h3>
+<p>Drag any toolbar button to a new place: the others slide aside and it snaps in. To move a whole group (for example all the blue drawing tools to the front), drag the dotted <b>grip</b> at the start of the group. Your order is remembered next time. To go back to the original order, right-click the toolbar.</p>
+<p>Press <kbd>F1</kbd> or click <span class="btn">Help</span> at any time for a quick guide to every tool.</p>
+
+<h2 class="flow"><span class="n">4</span>Moving around</h2>
+<table>
+  <tr><th>Mouse</th><th>What it does</th></tr>
+  <tr><td><b>Left button</b></td><td>Always belongs to the tool you've picked: it draws, pushes, moves… Click-click or press-drag-release both work.</td></tr>
+  <tr><td><b>Right button + drag</b></td><td>Orbit (turn the view) around whatever is under the mouse.</td></tr>
+  <tr><td><b>Right click</b></td><td>Opens the right-click menu (see below).</td></tr>
+  <tr><td><b>Middle button + drag</b></td><td>Pan (slide the view). Press the scroll wheel down and drag.</td></tr>
+  <tr><td><b>Scroll wheel</b></td><td>Zoom in and out, towards where the mouse points.</td></tr>
+</table>
+<ul>
+  <li><kbd>Shift</kbd>+<kbd>Z</kbd> (or the zoom-extents icon) fits everything in view.</li>
+  <li><b>Right-click</b> (without dragging) on the model opens a menu (picture below) of common jobs: select the whole object, all or none, Delete, Hide, Group, Reverse faces, Round every edge, Zoom to selection, export just the selection, Delete all guides, Check Model. Right-click on something not selected selects it first.</li>
+  <li>The <span class="btn">Iso</span> <span class="btn">Top</span> <span class="btn">Front</span> <span class="btn">Right</span> <span class="btn">Back</span> <span class="btn">Left</span> buttons jump to standard views.</li>
+  <li><b>View</b> switches between <i>Perspective</i> (natural, far things smaller) and <i>Parallel</i> (no perspective, good for checking sizes by eye).</li>
+</ul>
+<figure class="xs"><img src="shots/13-right-click.jpg" alt=""><figcaption>The right-click menu. Greyed-out items don't apply to what's selected.</figcaption></figure>
+
+<h2><span class="n">5</span>Drawing</h2>
+<p>WaughForm 3D works like SketchUp: draw a flat shape, then pull it up into 3D.</p>
+<ol class="steps">
+  <li>Press <kbd>R</kbd> and click two corners on the ground to draw a rectangle. To make it an exact size, type <code>40,30</code> and press <kbd>Enter</kbd>.</li>
+  <li>Press <kbd>P</kbd> (Push/Pull), click the rectangle and move the mouse up. Type <code>15</code> and press <kbd>Enter</kbd> for exactly 15 mm.</li>
+  <li>Draw a circle on the top face (<kbd>C</kbd>) and push it down through the box to cut a hole: when it reaches the far side it shows <b>Cuts Through</b>, so click to cut.</li>
+</ol>
+<table>
+  <tr><th>Tool</th><th>Key</th><th>How to use it</th></tr>
+  <tr><td>Select</td><td><kbd>Space</kbd></td><td>Click to select; Shift-click to add. Double-click selects a whole object. Drag left→right to select what's fully inside the box; right→left to select anything the box touches.</td></tr>
+  <tr><td>Line</td><td><kbd>L</kbd></td><td>Click points; closing the loop makes a face. A line across a face splits it. Tracing the open edge of a hole fills it.</td></tr>
+  <tr><td>Rectangle</td><td><kbd>R</kbd></td><td>Two corners. Type <code>width,depth</code> for exact sizes.</td></tr>
+  <tr><td>Circle</td><td><kbd>C</kbd></td><td>Centre, then radius. Type a radius, or <code>36s</code> to change the number of sides.</td></tr>
+  <tr><td>Arc</td><td><kbd>A</kbd></td><td>Click both ends, then move out to set the bulge and click (it snaps to a half circle). An arc drawn across a face cuts it in two.</td></tr>
+  <tr><td>Polygon</td><td><kbd>N</kbd></td><td>A hexagon, triangle or any straight-sided shape. Type <code>6s</code>, <code>3s</code>, <code>8s</code>… for the number of sides, then centre and corner.</td></tr>
+  <tr><td>3D Shapes</td><td><kbd>D</kbd></td><td>A ball, cone, cylinder or pyramid in one go (see below).</td></tr>
+  <tr><td>Push/Pull</td><td><kbd>P</kbd></td><td>Pull a face into 3D or push it in. Double-click repeats the last distance.</td></tr>
+  <tr><td>Move / Copy</td><td><kbd>M</kbd></td><td>Pick up and drop. Hold <kbd>Ctrl</kbd> to copy; then type <code>5x</code> for five copies in a row.</td></tr>
+  <tr><td>Rotate</td><td><kbd>Q</kbd></td><td>Centre, starting angle, end angle (snaps every 15°).</td></tr>
+  <tr><td>Round / Chamfer</td><td><kbd>J</kbd></td><td>Click a line where two faces meet to round it off. Type <code>3</code> for 3 mm rounded, <code>3c</code> for a 3 mm straight chamfer. <kbd>Shift</kbd>+click a box to round every edge at once.</td></tr>
+  <tr><td>Offset</td><td><kbd>F</kbd></td><td>Click a face, then move in or out: a copy of its outline that far inside or outside it.</td></tr>
+  <tr><td>Follow Me</td><td><kbd>W</kbd></td><td>Sweep a face along a selected path (see below).</td></tr>
+  <tr><td>Slice</td><td><kbd>X</kbd></td><td>Cut a solid in two with a flat plane; move or delete either half (see below).</td></tr>
+  <tr><td>Eraser</td><td><kbd>E</kbd></td><td>Click a single line to remove just that line (faces either side join up).</td></tr>
+  <tr><td>Paint Bucket</td><td><kbd>B</kbd></td><td>Colour faces.</td></tr>
+  <tr><td>Tape Measure</td><td><kbd>T</kbd></td><td>Measure between two points; an orange guide point is left at the second. After the first click, type a distance (e.g. <code>40</code>) for a guide point exactly that far along. <kbd>Ctrl</kbd>+click just measures.</td></tr>
+  <tr><td>Find Centre</td><td><kbd>K</kbd></td><td>Click two points; an orange centre point appears halfway, which every tool can snap to.</td></tr>
+  <tr><td>Delete guides</td><td><kbd>Shift</kbd>+<kbd>E</kbd></td><td>Removes all guide points when you've finished with them (toolbar: dashed cross with a red ✕).</td></tr>
+  <tr><td>Orbit / Pan / Zoom</td><td><kbd>O</kbd> <kbd>H</kbd> <kbd>Z</kbd></td><td>The same as the mouse controls, for people without a middle button.</td></tr>
+</table>
+<h3>Helpers while you draw</h3>
+<ul>
+  <li><b>Snapping:</b> the coloured dot shows what you're on: Endpoint (green), Midpoint (cyan), On Edge (red), On Face (blue).</li>
+  <li><b>Following an axis:</b> move roughly along red, green or blue and the line snaps to it, so you can draw straight up from the ground, then across in mid-air at that height.</li>
+  <li><b>Axis lock:</b> while drawing, the arrow keys lock to an axis: <kbd>→</kbd> red X, <kbd>←</kbd> green Y, <kbd>↑</kbd> blue Z, <kbd>↓</kbd> unlocks.</li>
+  <li><b>From Point:</b> while locked, hover over any corner and the line stops level with it (a dotted line shows which). For example press <kbd>↑</kbd> and hover the top of another part to draw a post exactly as tall.</li>
+  <li><b>Guide points:</b> the Tape Measure and Find Centre leave orange points that every tool snaps to: measure 40 mm from a corner, then draw straight to the point. <kbd>Shift</kbd>+<kbd>E</kbd> clears them all.</li>
+  <li><b>Square helper:</b> draw two lines meeting in an L and a purple cross shows the missing corner of a perfect square or rectangle.</li>
+  <li><b>Typing sizes:</b> just start typing a number; it goes into the size box. Units like <code>2cm</code> or <code>5'6"</code> work too.</li>
+</ul>
+<h3>Ready-made shapes</h3>
+<p><b>Polygon</b> (<kbd>N</kbd>) draws flat shapes with straight sides: a hexagon to start with, or type <code>3s</code> and <kbd>Enter</kbd> for a triangle, <code>8s</code> for an octagon. Push/Pull a hexagon to make a nut trap or a prism.</p>
+<p><b>3D Shapes</b> (<kbd>D</kbd>) makes a whole solid at once. Pick <b>Ball</b>, <b>Cone</b>, <b>Cylinder</b> or <b>Pyramid</b> in the panel that opens on the right, click the centre on the ground or on a face, then the radius, then the height (a ball needs only its radius). You can type each size and press <kbd>Enter</kbd> instead. Each shape is its own group, ready to print.</p>
+<figure class="m"><img src="shots/14-shapes.jpg" alt=""><figcaption>A hexagon and triangle (Polygon), and a ball, cone, cylinder and pyramid (3D Shapes), with the shape panel on the right.</figcaption></figure>
+<h3>Rounding edges and offsetting</h3>
+<figure class="xs"><img src="shots/10-round-offset.jpg" alt=""><figcaption>A box with one upright corner rounded (Round, 3 mm), and its top face offset 3 mm inwards, ready to push down into a recess or pull up into a lip.</figcaption></figure>
+<ul>
+  <li><b>Round / Chamfer</b> (<kbd>J</kbd>): hover a line and a blue preview shows the result (red means it can't, with the reason in the status bar). <kbd>Ctrl</kbd>+click does the other kind once. One line at a time works on any shape, but lines meeting at an already rounded corner can't be done one by one.</li>
+  <li><b>Round every edge</b> (<kbd>Shift</kbd>+click with Round): every edge and corner of a box-like shape is rounded at once, as below. The box keeps its exact size, and prints without sharp edges. It works on shapes without dents, steps or holes; for others, round the lines one at a time.</li>
+  <li><b>Offset</b> (<kbd>F</kbd>): inside, it splits the face into a rim and a middle, so you can Push/Pull the middle (a recess, a lid lip, wall thickness). Type a distance and <kbd>Enter</kbd>; a minus sign (<code>-2</code>) offsets outside. Holes in the face stay with whichever part they end up in.</li>
+</ul>
+<figure class="xs"><img src="shots/12-round-all.jpg" alt=""><figcaption>The same 40 × 30 × 20 mm box with every edge and corner rounded (Shift+click, 2 mm).</figcaption></figure>
+<h3>Follow Me: sweeping a shape along a path</h3>
+<p>Follow Me pushes a flat shape along a route, like squeezing icing along a line. <b>Pick the path first, then click the shape.</b> Example: a ring.</p>
+<ol class="steps">
+  <li><b>The path:</b> press <kbd>C</kbd>, click the ground, type <code>20</code> and <kbd>Enter</kbd>: a flat circle.</li>
+  <li><b>The shape, standing across the path:</b> press <kbd>L</kbd> and click the circle's edge where it says <b>Endpoint</b>. Press <kbd>↑</kbd>, type <code>4</code> <kbd>Enter</kbd> (up); <kbd>→</kbd>, move outwards, <code>3</code> <kbd>Enter</kbd>; <kbd>↑</kbd>, move down, <code>4</code> <kbd>Enter</kbd>; then <kbd>↓</kbd> and click the first point to close the square.</li>
+  <li><b>Select the path:</b> press <kbd>Space</kbd> and click inside the circle (it turns blue).</li>
+  <li><b>Sweep:</b> press <kbd>W</kbd> and click the square. The ring is a new group; select the flat circle and press <kbd>Delete</kbd> if you don't need it.</li>
+</ol>
+<p>A path can be one face (its outline is followed, as here) or lines: select the first and <kbd>Shift</kbd>+click the rest, as one unbroken chain. The shape must stand across the path (not lie along it), at the start of a line path or anywhere on an outline. A shape with a hole in it makes a tube.</p>
+<figure class="xs"><img src="shots/11-follow-me.jpg" alt=""><figcaption>The result: a 3 × 4 mm square swept around a 20 mm circle.</figcaption></figure>
+<h3>Slice: cutting a solid in two</h3>
+<p>Something SketchUp doesn't have: <b>Slice</b> (<kbd>X</kbd>) cuts any closed solid in two, for example to print a tall part in two halves, to look inside, or to keep only the top of a box.</p>
+<ol class="steps">
+  <li>Press <kbd>X</kbd> and hover over the shape: a red plane shows where the cut goes, and follows the mouse.</li>
+  <li>Turn the plane with the arrow keys: <kbd>↑</kbd> flat (a horizontal cut), <kbd>→</kbd> across the red axis, <kbd>←</kbd> across the green axis.</li>
+  <li>Click to cut there, or type a distance from the bottom (or left / front) of the shape and press <kbd>Enter</kbd> for an exact cut.</li>
+</ol>
+<p>Each half is closed off with a flat face where it was cut and becomes its own group: move it with <kbd>M</kbd>, or click it with Select and press <kbd>Delete</kbd>. Undo (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) puts the shape back together.</p>
+<figure class="xs"><img src="shots/15-slice.jpg" alt=""><figcaption>A cylinder sliced down the middle, with one half moved aside.</figcaption></figure>
+<h3>Copy and paste</h3>
+<p>Select something and press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy it (or <kbd>Ctrl</kbd>+<kbd>X</kbd> to cut it). <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes a copy just to the right of the original, selected and ready to move with <kbd>M</kbd>; paste again for more copies in a row. After a Cut, the first paste goes back where it was. Copy, Cut and Paste are also on the toolbar (grey, next to Undo) and in the right-click menu.</p>
+<h3>Groups and hiding</h3>
+<ul>
+  <li><b>Group</b> (<kbd>G</kbd>): select items and group them, so they move and rotate as one solid piece that doesn't stick to other shapes. <b>Ungroup</b> with <kbd>Shift</kbd>+<kbd>G</kbd>.</li>
+  <li><b>Hide</b> (<kbd>Shift</kbd>+<kbd>H</kbd>): hide selected faces to work on what's behind or inside them. <b>Unhide All</b> with <kbd>Shift</kbd>+<kbd>U</kbd>. Hidden faces are still saved and printed.</li>
+</ul>
+
+<h2 class="flow"><span class="n">6</span>Making it ready to print</h2>
+<figure class="s"><img src="shots/04-enclosure-check.jpg" alt=""><figcaption>Check Model: every line ticked means the model is ready to print.</figcaption></figure>
+<p>Click <span class="btn">Check Model</span> (the shield icon). It checks five things and marks any problem right on the model:</p>
+<table>
+  <tr><th>Check</th><th>If there's a problem</th></tr>
+  <tr><td>Watertight</td><td>Gaps are shown with <b>thick red lines</b>. Click <b>Fill holes</b>, or trace the gap closed with the Line tool.</td></tr>
+  <tr><td>Faces point outward</td><td>Inside-out faces get <b>orange outlines</b>. Click <b>Fix directions</b>.</td></tr>
+  <tr><td>No loose lines</td><td>Lines that aren't part of a face won't print. Click <b>Delete loose lines</b>.</td></tr>
+  <tr><td>Nothing floating</td><td>A piece hanging in mid-air (not on the bed and not resting on another piece) fails the check, because a printer can't start a part on nothing. It says how far up it is: <b>Move down to rest</b> drops it onto what's below, and <b>Show it</b> selects it and zooms in.</td></tr>
+  <tr><td>Fits your printer</td><td>Use <span class="btn">Resize</span> to set the exact size, or <span class="btn">Printer</span> to change the bed size. Separate groups (such as a base and lid) are checked one at a time: the check gives the whole size and says each piece fits on its own.</td></tr>
+</table>
+<p><b>Zoom to problems</b> takes you straight to anything that needs fixing. The check also opens by itself if a Save or Export finds a problem.</p>
+<h3>Sending it to your slicer</h3>
+<p>Click <span class="btn">Export 3MF</span> or <span class="btn">Export STL</span>, then open the file in Cura, PrusaSlicer, Bambu Studio, OrcaSlicer or any other slicer. Sizes are always in millimetres. If something is selected, only the selection is exported. In a 3MF file each separate piece becomes its own part, so the slicer can place them separately.</p>
+<div class="tip"><b>Tip:</b> if a part arrives in the slicer far too big or small, it was drawn with the wrong <b>Units</b> setting. Use <span class="btn">Resize</span> to set its real size.</div>
+
+<h2 class="flow"><span class="n">7</span>Saving and opening</h2>
+<ul>
+  <li><b>Save</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>) makes a <code>.3mf</code> file. Any slicer can print it, and it opens again in WaughForm 3D fully editable.</li>
+  <li><b>Open</b> (<kbd>Ctrl</kbd>+<kbd>O</kbd>) opens <code>.3mf</code> and <code>.stl</code> files, including ones from other programs: flat areas become editable faces.</li>
+  <li>Your work is also <b>saved automatically</b> as you go and comes back the next time you open the program.</li>
+  <li><b>Export PNG</b> saves a picture of the view; <b>Export OBJ</b> is for other 3D programs.</li>
+</ul>
+
+<h2><span class="n">8</span>The Parts Library</h2>
+<p>Click <span class="btn">Parts</span>. The library holds the electronic parts you put in boxes: their size, the holes and sockets that matter, and their pins. It comes with an ESP32-S3 board, an INMP441 microphone, a MAX98357A amplifier, a 3 W speaker, a TP4056 charger, two batteries and a slide switch. Your own parts are saved on your computer.</p>
+<figure><img src="shots/06-parts-pins.jpg" alt=""><figcaption>A part in the library: its sizes and features on the left, the pins table below them, and the picture on the right with features (dark circles) and pins (gold dots).</figcaption></figure>
+<h3>Browsing ready-made parts</h3>
+<p>The quickest way to add a part: click <span class="btn">Browse parts…</span> at the top of the Parts Library (or <b>Browse over 2,000 ready-made parts</b> in the Enclosure Wizard). Over 2,000 parts come with WaughForm 3D, with their pins, sizes and pictures, so no internet or Fritzing is needed.</p>
+<figure><img src="shots/18-browse.jpg" alt=""><figcaption>Browse parts: searching for "gyroscope" finds gyroscope modules even when their names don't say so.</figcaption></figure>
+<ul>
+  <li><b>Search</b> by part number (<i>HC-SR04</i>, <i>MPU6050</i>) or simply by what it does: <i>gyroscope</i>, <i>temperature humidity</i>, <i>air quality</i>, <i>screen</i>, <i>relay</i>, <i>GPS</i>… The best matches come first.</li>
+  <li><b>All kinds</b> narrows the list to sensors, boards, displays, motors, sound, power and so on, to scroll through.</li>
+  <li>Click a part to see its picture, size, number of pins and description.</li>
+  <li>In the web-page version (WaughForm_3D.html in a browser), the first <b>Browse parts…</b> asks for the file <code>parts-library.json</code> that comes with it. The browser keeps it, so it only asks once.</li>
+  <li><b>Add to my box</b> saves the part and puts it straight into the Enclosure Wizard. <b>Open to check first</b> opens it as a new part to look over (and measure against the real board) before you save it.</li>
+</ul>
+<h3>Adding a part from a photo</h3>
+<ol class="steps">
+  <li>Measure the part with a ruler or calipers: length, width and height, in millimetres.</li>
+  <li>Take a photo looking <b>straight down</b> on it, with a plain background.</li>
+  <li>Click <b>+ New part</b>, type a name and the measurements.</li>
+  <li>Click <b>Top photo…</b>, choose the picture and click the board's <b>four corners</b> in order: top-left, top-right, bottom-right, bottom-left. If a corner is rounded, click where it would be if it were square. The photo is straightened to scale; if it was taken the other way round, it's turned to match, and <b>Turn photo 180°</b> fixes upside-down.</li>
+  <li>Mark the important bits: click a <b>+</b> button above the picture, then click (or drag) on the photo.</li>
+  <li>Click <b>Save part</b>.</li>
+</ol>
+<table>
+  <tr><th>Feature</th><th>What the box gets</th></tr>
+  <tr><td>Port / socket</td><td>A hole in the wall so you can plug a cable in (USB-C, Micro-USB, DC barrel, jack…). The part is placed with that edge against a wall.</td></tr>
+  <tr><td>Mounting hole</td><td>A post with a screw hole (or a locating peg for parts on a wall).</td></tr>
+  <tr><td>Mic sound hole</td><td>A small hole so the microphone can hear outside.</td></tr>
+  <tr><td>Speaker cone</td><td>Slots (a grille) so the sound gets out.</td></tr>
+  <tr><td>Round opening</td><td>A round hole the part shows through: ultrasonic sensor "eyes", IR sensors, buzzers, camera lenses.</td></tr>
+  <tr><td>Button, LED, Display window</td><td>Holes in the lid to press, see or show through.</td></tr>
+  <tr><td>Antenna</td><td>Other parts are kept 10 mm clear of it, so Wi-Fi works well.</td></tr>
+  <tr><td>Pin header row</td><td>Kept clear of the supports; the Prototype style adds room for jumper plugs.</td></tr>
+  <tr><td>Gets hot</td><td>Vent slots in the lid above it.</td></tr>
+  <tr><td>Switch lever, Cable exit</td><td>A slot in the wall for a switch lever, or a notch for a cable.</td></tr>
+</table>
+<p><b>Usually mounted</b> says whether the part lies flat on the floor or faces out through a wall (microphones, speakers, ultrasonic sensors). For wall parts, photograph the side that faces out. <b>Side photo for heights…</b> measures heights from a side-on photo: follow the steps in the yellow bar.</p>
+<p><b>Turn part 90°</b> (under the sizes) turns the whole part a quarter turn clockwise: its sizes, picture, features and pins move together. Use it if a part came in standing up; the long side should run left to right.</p>
+<p><b>Save part</b>, <b>Duplicate</b>, <b>Delete</b> and <b>Use in enclosure</b> stay pinned at the bottom of the details however far you scroll.</p>
+<h3>Pins and ready-made part files</h3>
+<p>The <b>Pins</b> table at the bottom lists each pin and its role (power, ground, I2S clock, trigger, any signal…). The Wiring window works from these roles. Click <b>+ Pin</b> to add one by hand.</p>
+<p>Quicker: someone may already have made a <b>part file</b> (<code>.fzpz</code>) for your board, with all its pins, its size and a picture.</p>
+<ol class="steps">
+  <li>In the blue <b>Fill in automatically</b> box click <b>Search for a part file (.fzpz)…</b>. Your web browser searches for the part name plus "fzpz".</li>
+  <li>Download a <code>.fzpz</code> that matches your board.</li>
+  <li><b>Drag the file onto the part picture</b> (or click <b>Import pins…</b> › <b>Use a .fzpz file…</b>). <b>Import pins…</b> also lists the same ready-made parts to search (sensors, boards, modules, displays…), from the parts library that comes with WaughForm 3D, so you don't need Fritzing or the internet. If Fritzing is installed, its own parts are listed instead.</li>
+</ol>
+<p>A board drawn standing up is turned automatically so its long side runs left to right. Always check the pin roles, and measure the board: those pictures keep the pin spacing exact but are sometimes drawn smaller than the real board.</p>
+
+<h2><span class="n">9</span>Filling in a part automatically</h2>
+<p>This is the only feature that uses the internet, and only when you click it. An AI looks the part up and fills in a <b>draft</b>, which you check before saving.</p>
+<h3>Choosing the AI and adding a key</h3>
+<p>Both options need a "key" (a password for the AI service), which is kept on your computer only. Choose the AI in the blue <b>Fill in automatically</b> box at the top of a part.</p>
+<table>
+  <tr><th>AI</th><th>Cost</th><th>Getting a key</th></tr>
+  <tr><td><b>Google Gemini</b></td><td>Free for everyday use; sometimes busy.</td><td>Click <b>Set up free AI key…</b>, then OK. In Google AI Studio sign in, click <b>Create API key</b>, copy it, and paste it into the app.</td></tr>
+  <tr><td><b>Claude</b></td><td>Paid per use from credit you add (roughly US$0.10–0.40 a look-up, an estimate). Usually more reliable.</td><td>At <code>console.anthropic.com</code> sign in, add credit under Billing, then <i>Settings › API Keys › Create Key</i>. Paste it with <b>Set up Claude key…</b>.</td></tr>
+</table>
+<h3>Look up online</h3>
+<ol class="steps">
+  <li>Click <b>+ New part</b>, then <b>Look up online…</b> and type the exact part number (e.g. <i>HY-SRF05</i> or <i>ESP32-S3-DevKitC-1</i>).</li>
+  <li>The AI searches the web, reads the maker's documentation and fills in the sizes, holes and sockets (pins come from a part file, chapter 8). The yellow bar lists anything it wasn't sure of, with links to its sources.</li>
+  <li>In the desktop app it also downloads <b>product photos</b> (click one, then its 4 corners, to line it up) and reads any <b>dimension drawing</b> or datasheet it found for exact positions. The drawing appears in the top-right corner for checking.</li>
+  <li>Check every number, fix anything wrong, and click <b>Save part</b>.</li>
+</ol>
+<p>If the look-up can't find the part, use <b>Search images myself…</b> to find a dimension drawing in Google Images, copy it, and press <kbd>Ctrl</kbd>+<kbd>V</kbd> in the part (or use <b>Read a drawing…</b>). The AI then reads the drawing.</p>
+<div class="warn"><b>Always check:</b> AI can misread drawings, and cheap modules come in several versions with different hole positions. Only the part number (or the drawing and part name) is sent to the AI; on Google's free plan Google may use it to improve its products.</div>
+
+<h2><span class="n">10</span>The Enclosure Wizard</h2>
+<p>Click <span class="btn">Enclosure</span>. Tell it which parts go in the box, and it designs the smallest printable box (base and lid) that fits them, with all the right holes.</p>
+<figure class="m"><img src="shots/03-wizard.jpg" alt=""><figcaption>The Enclosure Wizard: your choices on the left, the top view of the layout on the right (front wall at the bottom), and what the box does underneath.</figcaption></figure>
+<ol class="steps">
+  <li><b>Parts:</b> add them from the list; set how many, and (if you like) which wall a part faces. Remove a part with its red ✕.</li>
+  <li><b>Power:</b> USB cable only, or a battery inside (a battery, charger and on/off switch are added for you).</li>
+  <li><b>Style</b> and <b>Lid</b> (see below), and the <b>Box size</b>: the smallest that fits, at least a size, or an exact size.</li>
+  <li>Check the <b>layout</b>. Drag a part to move it, or drag a wall part onto another wall; <span class="btn">Rotate part</span> (or <kbd>R</kbd>) turns the selected part. The list underneath shows ✓ for what's fine and ! or ✗ for what isn't. <span class="btn">Auto arrange</span> starts again.</li>
+  <li>Click <span class="btn">Generate base + lid</span>. The base and lid appear as two groups, checked and ready to print.</li>
+</ol>
+<table>
+  <tr><th>Style</th><th>Best for</th></tr>
+  <tr><td>Compact</td><td>Wires soldered in place. The smallest, neatest box.</td></tr>
+  <tr><td>Prototype / Dupont</td><td>Still experimenting: room for push-on jumper wires, wider gaps and a cable slot.</td></tr>
+  <tr><td>Rugged</td><td>Thick 3 mm walls, a screw-down lid with a gasket groove, and mounting ears.</td></tr>
+</table>
+<p>Lids: <b>push-fit</b> (a lip that slides in), <b>snap-fit</b> (clicks on), or <b>screws</b> (4 × M3 self-tapping into corner posts). Base and lid are separate pieces, so print the lid first to check the fit.</p>
+<p>The rules it follows: sockets go against a wall so the hole lines up; microphones face out, away from the speaker; antennas stay clear; chargers sit near batteries; nothing touches anything else.</p>
+<div class="tip"><b>No supports needed:</b> wall parts (e.g. ultrasonic sensors) sit on standoffs with <b>45° braces</b>, and press-in rings get a 45° chamfer, so set supports to <b>None</b> in your slicer.</div>
+
+<h2><span class="n">11</span>Wiring</h2>
+<p>Click <span class="btn">Wiring</span> (or <b>Wiring…</b> in the Enclosure Wizard). For the parts in your box it works out what wire goes where, using each part's pins.</p>
+<figure class="s"><img src="shots/07-wiring.jpg" alt=""><figcaption>The Wiring window for an ESP32-S3 with a microphone, amplifier, speaker, battery, charger and switch.</figcaption></figure>
+<ul>
+  <li><b>Safe pins:</b> on the ESP32-S3 it never uses the pins that would stop it working: GPIO 0, 3, 45, 46 (start-up), 19/20 (USB), 43/44 (serial), 35–37 (memory on N16R8 boards) and 38/48 (RGB LED).</li>
+  <li><b>Power:</b> USB, or battery → charger → switch → everything else, with every ground joined (to the charger's OUT−, never B−).</li>
+  <li><b>Warnings</b> for anything risky, such as a 5 V signal into a 3.3 V pin (it tells you which resistors to add) or a speaker wire to ground.</li>
+</ul>
+<div class="two">
+  <div>
+    <h3>The diagram</h3>
+    <p>Each board with its pins and coloured wires: red 5 V, orange battery, pink 3.3 V, black GND, other colours for signals. Drag boards to tidy it. Hover a wire in the list to find it in the picture. <b>Save picture</b> saves it as a PNG.</p>
+  </div>
+  <div>
+    <h3>The wiring list and code</h3>
+    <p>Tick each wire as you solder it; <b>Save wiring list</b> saves it to print. <b>Code pins</b> gives the matching pin settings for ESPHome and Arduino, ready to copy.</p>
+  </div>
+</div>
+<figure class="s"><img src="shots/08-wiring-code.jpg" alt=""><figcaption>Code pins: the same pins, ready for ESPHome or Arduino.</figcaption></figure>
+<div class="warn"><b>Before you power up:</b> check every connection against the labels printed on your own boards.</div>
+<h2><span class="n">12</span>Programming your board (ESPHome)</h2>
+<p>If the controller is an ESP32 (or ESP8266) board, the <b>ESPHome device</b> tab in the Wiring window writes the whole file ESPHome needs to program it, using the pins from this wiring, so the board and the wires always match.</p>
+<div class="two">
+<figure style="margin-top:0"><img src="shots/16-esphome.jpg" alt=""><figcaption>The ESPHome device tab for a voice assistant, checked with ESPHome.</figcaption></figure>
+<div>
+<ol class="steps">
+  <li>Open <span class="btn">Wiring</span> and click the <b>ESPHome device</b> tab.</li>
+  <li>Give the device a <b>name</b> (it's how Home Assistant shows it) and choose what it's for:
+    <ul><li><b>Sensor node</b>: reports its readings (distance, temperature, motion, button, battery…). Works with <b>Home Assistant</b>, or <b>on its own</b> with its own web page. Set how often it reads, and the "Something close" alarm distance for an ultrasonic sensor.</li>
+    <li><b>Voice assistant</b>: needs an I2S microphone and amplifier with a speaker. Pick the wake word; it talks to Home Assistant.</li></ul></li>
+  <li>Answer the other questions shown: battery-low level, what the button does, and whether the board's own RGB LED is a status light.</li>
+  <li>Click <b>Send to ESPHome</b>. The device goes straight into ESPHome Device Builder on this computer, and ESPHome opens. (If a device of that name is already there, it asks before replacing it.) <b>Check with ESPHome</b> checks the file first, the same as Validate; <b>Copy YAML</b> and <b>Save .yaml…</b> are there if you want the file itself.</li>
+  <li>In ESPHome, find your device, plug the board in by USB and click <b>Install</b>. ESPHome builds the program and puts it on the board. Your Wi-Fi name and password come from ESPHome's <b>Secrets</b>; WaughForm 3D tells you if they're missing.</li>
+</ol>
+</div></div>
+<p>Your Wi-Fi name and password are not in the file: it uses ESPHome's <b>Secrets</b> (<code>wifi_ssid</code>, <code>wifi_password</code>). Parts it knows get their own section (I2S microphone and amplifier, ultrasonic sensors, DHT11/DHT22 and DS18B20 temperature sensors, BME280, BMP280, AHT10/20 and SHT3x sensors, buttons, PIR motion sensors, LEDs, relays, buzzers, battery level) straight away. <b>Any other part, such as one you imported from a part file, is handled by your AI:</b> the tab lists it under "needs the AI", and one click on <b>Make it with AI</b> writes its code from the part's name, its part-file description and its pins. You don't need to know what the module is or how it works.</p>
+<h3>Telling it what to do</h3>
+<div class="two">
+<figure style="margin-top:0"><img src="shots/17-esphome-rules.jpg" alt=""><figcaption>A light rule, and a description for the AI.</figcaption></figure>
+<div>
+<p><b>Light rule</b> (no internet needed): tick it and fill in the sentence, for example <i>The status light is <b>red</b> while <b>Temperature</b> is <b>above 28 °C</b>, otherwise <b>green</b></i>. It works with any reading the device has (temperature, humidity, distance, battery voltage…) and the board's RGB status light, or a plain LED (on/off).</p>
+<p><b>What should it do?</b> (uses your AI key): optional. If you leave it empty, <b>Make it with AI</b> just makes every part work and report its readings. Or describe it in your own words, for example <i>"Turn the relay on when the probe is over 30 °C and off again below 27 °C"</i>, and click <b>Make it with AI</b>. Your AI (Gemini or Claude, set up in Parts) adds it to the file without touching the pins or Wi-Fi. ESPHome on this computer then checks the result; if it finds a mistake, the error goes back to the AI to fix, up to three tries. The panel shows ✓ when it passes, with the AI's own notes on what it added.</p>
+<p>Always read an AI-written file through before installing it. <b>Back to the plain file</b> undoes it, and changing any answer goes back to the plain file too.</p>
+</div></div>
+<div class="tip"><b>Battery level:</b> with a battery, the wiring adds two 100 kΩ resistors from the battery + (after the switch) to GND, with the middle going to a measuring pin, so the board can report its battery voltage.</div>
+
+<h2><span class="n">13</span>Sharing with other people</h2>
+<ul>
+  <li><b>Drawings:</b> send the <code>.3mf</code> file you saved. Slicers print it, and WaughForm 3D opens it fully editable.</li>
+  <li><b>Parts:</b> in Parts click <b>Export…</b> and send the <code>.json</code> file; they click <b>Import…</b>. If your parts have photos you can export with or without them. Photos downloaded from websites belong to whoever took them, so choose <b>Export without photos</b> when sharing.</li>
+  <li><b>The program:</b> send the <code>.exe</code> with this manual, the README and the checksums file, or simply send the link to the GitHub download page. Each person sets up their own AI key if they want the online feature; keys are never shared.</li>
+</ul>
+
+<h2 class="flow"><span class="n">14</span>Keyboard shortcuts</h2>
+<div class="two">
+<table>
+  <tr><th>Key</th><th>Does</th></tr>
+  <tr><td><kbd>Space</kbd></td><td>Select</td></tr>
+  <tr><td><kbd>L</kbd></td><td>Line</td></tr>
+  <tr><td><kbd>R</kbd></td><td>Rectangle</td></tr>
+  <tr><td><kbd>C</kbd></td><td>Circle</td></tr>
+  <tr><td><kbd>A</kbd></td><td>Arc</td></tr>
+  <tr><td><kbd>N</kbd></td><td>Polygon</td></tr>
+  <tr><td><kbd>D</kbd></td><td>3D Shapes</td></tr>
+  <tr><td><kbd>P</kbd></td><td>Push/Pull</td></tr>
+  <tr><td><kbd>M</kbd></td><td>Move / Copy (hold <kbd>Ctrl</kbd>)</td></tr>
+  <tr><td><kbd>Q</kbd></td><td>Rotate</td></tr>
+  <tr><td><kbd>F</kbd></td><td>Offset</td></tr>
+  <tr><td><kbd>J</kbd></td><td>Round / Chamfer</td></tr>
+  <tr><td><kbd>W</kbd></td><td>Follow Me</td></tr>
+  <tr><td><kbd>X</kbd></td><td>Slice</td></tr>
+  <tr><td><kbd>E</kbd></td><td>Eraser</td></tr>
+  <tr><td><kbd>B</kbd></td><td>Paint Bucket</td></tr>
+  <tr><td><kbd>T</kbd></td><td>Tape Measure</td></tr>
+  <tr><td><kbd>K</kbd></td><td>Find Centre</td></tr>
+  <tr><td><kbd>O</kbd> <kbd>H</kbd> <kbd>Z</kbd></td><td>Orbit, Pan, Zoom</td></tr>
+</table>
+<table>
+  <tr><th>Key</th><th>Does</th></tr>
+  <tr><td><kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Fit everything in view</td></tr>
+  <tr><td><kbd>G</kbd> / <kbd>Shift</kbd>+<kbd>G</kbd></td><td>Group / Ungroup</td></tr>
+  <tr><td><kbd>Shift</kbd>+<kbd>H</kbd> / <kbd>Shift</kbd>+<kbd>U</kbd></td><td>Hide / Unhide all</td></tr>
+  <tr><td><kbd>Shift</kbd>+<kbd>E</kbd></td><td>Delete all guide points</td></tr>
+  <tr><td><kbd>→</kbd> <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Lock to X, Y, Z / unlock</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Undo / Redo</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save (<kbd>Shift</kbd> for Save As)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>N</kbd></td><td>Open / New</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>Copy / Cut / Paste</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>T</kbd></td><td>Select everything / nothing</td></tr>
+  <tr><td><kbd>Delete</kbd></td><td>Delete the selection</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Cancel / close a window</td></tr>
+  <tr><td><kbd>F1</kbd></td><td>Help</td></tr>
+  <tr><td>Right-click a text box</td><td>Cut, Copy, Paste text</td></tr>
+</table>
+</div>
+
+<h2 class="flow"><span class="n">15</span>Problems and answers</h2>
+<table class="tight">
+  <tr><th>Problem</th><th>What to do</th></tr>
+  <tr><td>The part is huge or tiny in the slicer</td><td>It was drawn with the wrong Units. Use <span class="btn">Resize</span> to set its real size in mm.</td></tr>
+  <tr><td>The slicer says the model isn't closed</td><td>Click <span class="btn">Check Model</span>, then <b>Fill holes</b> and <b>Fix directions</b>.</td></tr>
+  <tr><td>Nothing happens when I click to draw</td><td>Check which tool is highlighted on the toolbar. The left button always belongs to that tool.</td></tr>
+  <tr><td>The 3D view looks washed out</td><td>Windows HDR can do this. Try turning HDR off in <i>Windows Settings › Display</i>.</td></tr>
+  <tr><td>The Enclosure Wizard can't fit the parts</td><td>Try another style, set a part's mount or wall back to Auto, or choose a bigger size.</td></tr>
+  <tr><td>Look up online fills nothing in</td><td>Click <b>Show AI reply</b> to see what came back. "Busy" means try again later or switch AI; otherwise try the exact part number, or use Search images myself… and Read a drawing.</td></tr>
+  <tr><td>Follow Me says "First select the path"</td><td>Select the path with <kbd>Space</kbd> first (it turns blue), then press <kbd>W</kbd> and click the shape.</td></tr>
+  <tr><td>A rounding or offset is refused</td><td>Read the status bar: usually the size is too big for the face beside it. Type a smaller size and press <kbd>Enter</kbd>.</td></tr>
+  <tr><td>A part is missing from the wiring diagram</td><td>It has no pins yet. Add them in Parts, or use <b>Import pins…</b>.</td></tr>
+  <tr><td>Which version do I have?</td><td>Click <span class="btn">About</span> (top right), or look in the bottom-right corner of the 3D view. <b>Copy version</b> copies it, to paste into a message.</td></tr>
+  <tr><td>My work disappeared</td><td>The last drawing is saved automatically and comes back when you open the program. Keep important work saved as <code>.3mf</code> files too.</td></tr>
+</table>
+
+<h2 class="flow"><span class="n">16</span>Credits</h2>
+<p><b>WaughForm 3D</b> was created by David John Waugh. © 2026 David John Waugh. It is free software: you can share it and change it under the GNU General Public License, version 3 or any later version. It comes with no warranty.</p>
+<ul>
+  <li>The Enclosure Wizard's solid modelling uses the <b>Manifold</b> geometry library (© The Manifold Authors, Apache License 2.0), built into the program.</li>
+  <li>The optional Claude look-up uses the <b>Anthropic TypeScript SDK</b> (© Anthropic, Apache License 2.0), also built in.</li>
+  <li>Parts brought in with <b>Import pins…</b> from a <code>.fzpz</code> file or the Fritzing parts library keep their credit (© Fritzing contributors, CC BY-SA 3.0) in the part's notes. The parts library that comes with WaughForm 3D (over 2,000 parts, with their pins and pictures) is made from the Fritzing parts library, © Fritzing contributors, licensed under <b>CC BY-SA 3.0</b> (creativecommons.org/licenses/by-sa/3.0); parts made from it keep that credit and licence.</li>
+  <li>ESP32-S3-DevKitC-1 pin layout from Espressif's ESP32-S3-DevKitC-1 user guide.</li>
+</ul>
+</body>
+</html>

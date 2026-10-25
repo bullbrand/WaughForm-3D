@@ -1,0 +1,49 @@
+{
+  "name": "waughform-3d",
+  "productName": "WaughForm 3D",
+  "version": "1.9.3",
+  "description": "WaughForm 3D: from idea to object",
+  "author": "David John Waugh",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node -e \"require('fs').copyFileSync('../WaughForm_3D.html','app.html')\"",
+    "start": "npm run sync && electron .",
+    "dist": "npm run sync && electron-builder --win nsis portable"
+  },
+  "build": {
+    "appId": "uk.davidjohnwaugh.waughform3d",
+    "productName": "WaughForm 3D",
+    "copyright": "© 2026 David John Waugh",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app.html",
+      "icon.ico",
+      "parts-library.json"
+    ],
+    "win": {
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "license": "LICENSE.txt",
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WaughForm 3D",
+      "artifactName": "WaughForm 3D Setup ${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "WaughForm 3D Portable ${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
+  }
+}
