@@ -8,7 +8,7 @@ Everything runs on your own computer and works offline.
 
 ![Drawing a block with a hole, a flag pole and a flag](docs/draw.gif)
 
-▶ **[Watch the 35-second demo video](docs/WaughForm-3D-demo.mp4)**
+▶ **[Watch the 35-second demo on YouTube](https://youtu.be/QXAQcnbirJc)** (or [download the video](docs/WaughForm-3D-demo.mp4))
 
 ## Download
 
