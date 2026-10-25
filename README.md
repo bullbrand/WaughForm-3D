@@ -31,7 +31,10 @@ The illustrated **User Manual (PDF)** comes with every release.
 | ![Wiring](docs/07-wiring.jpg) | **Wiring**: a diagram and a tick-off list of every connection, worked out from the parts' pins. |
 | ![ESPHome](docs/16-esphome.jpg) | **Code**: writes a complete ESPHome YAML file for the ESP32 board, using the pins from the wiring. Add simple rules ("light red above 28 °C"), or describe what you want and let an AI add it (optional, with your own key). Then *Send to ESPHome* puts it straight into ESPHome Device Builder. |
 
-**Drawing tools (SketchUp-style):** Line, Rectangle, Circle, Arc, Polygon, Push/Pull, Move, Rotate, Offset, Follow Me, Round/Chamfer, Slice, Tape Measure with guides, Paint, 3D shapes (ball, cone, cylinder, pyramid), Copy/Paste and Undo. Shortcut keys match SketchUp. *Check Model* finds holes, gaps and floating pieces before you print.
+| ![Holes](docs/holes.jpg) | **Holes for printing**: M2 to M12 screw holes in one click: clearance, a **real metric thread**, tapped, heat-set insert, countersunk, counterbored or nut trap, sized so they work on a 3D printer. |
+| ![Thread](docs/thread.jpg) | **Solid tools**: Join, Subtract and Intersect; Flip and Mirror; Shell (hollow out); Lay flat; raised or engraved **3D text**. Here an M12 threaded hole, cut in half with Subtract to show the thread. |
+
+**Drawing tools (SketchUp-style):** Line, Rectangle, Circle, Arc, Polygon, Push/Pull (several faces at once), Move, Rotate, Offset, Follow Me, Round/Chamfer, Slice, Tape Measure with guides, Paint, 3D shapes (ball, cone, cylinder, pyramid), Copy/Paste. Shortcut keys match SketchUp. Shapes show their **sizes**, which you can click and change. A **view cube** picks the side to draw on, and the **History** panel lets you go back any number of steps. *Check Model* finds holes, gaps and floating pieces before you print.
 
 **Export:** STL, 3MF, OBJ and PNG.
 

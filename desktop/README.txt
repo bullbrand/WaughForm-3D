@@ -1,5 +1,5 @@
 WaughForm 3D  -  from idea to object
-Version 1.9.4
+Version 1.9.5
 © 2026 David John Waugh. Free software under the GNU GPL v3 or later
 (see LICENSE.txt). It comes with no warranty.
 
@@ -16,11 +16,11 @@ below).
 
 You will have one of these two files. Either one is the whole program:
 
-  WaughForm 3D Portable 1.9.4.exe
+  WaughForm 3D Portable 1.9.5.exe
       Just double-click it. Nothing is installed. It also works from
       a USB stick.
 
-  WaughForm 3D Setup 1.9.4.exe
+  WaughForm 3D Setup 1.9.5.exe
       Installs the program with a Start menu and desktop shortcut.
       Uninstall it any time from Settings > Apps.
 
@@ -85,6 +85,29 @@ two faces meet. Type 3 then Enter for a 3 mm rounding, or 3c for a
 Also new: Arc (A), Offset (F) for a copy of a face's outline inside or
 outside it, and Follow Me (W) to sweep a shape along a path. F1 shows
 how each one works.
+NEW: the view cube (top right corner) turns with the view. Click a face
+of it to look straight at that side and draw on it (a light blue grid
+shows the side; TOP is the ground), an edge or corner for an angled
+view, or drag it to turn the view. A new, empty drawing starts with the
+cube in the middle, asking which side you want to draw on.
+NEW: sizes on shapes. A rectangle you have just drawn (or selected)
+shows its two sides, a circle its diameter, a box its width, depth and
+height. Click a size, type a new one and press Enter to change it.
+NEW: Push/Pull several faces at once: Shift+click them, then click one
+and pull. They rise together as one solid, with no walls between them.
+NEW: Join (U) merges two or more objects into one solid for printing.
+NEW: Subtract (S) cuts shapes out of an object (pick the object to keep
+first, then Shift+click the shapes to cut out); Intersect keeps only the
+overlap. Flip / Mirror turns the selection over or adds a mirrored copy
+beside it. Lay flat: click the face that should go down on the bed.
+3D Text: raised or engraved lettering in the fonts on your computer.
+Shell hollows a solid out with walls of a set thickness (e.g. a tray).
+Hole drills screw holes at printing sizes (M2 to M12): clearance, a real
+metric thread, tapped, heat-set insert, countersunk, counterbored or nut
+trap. Click a face. (Printed threads work best from M6 up.)
+NEW: History. Every change is listed on the left. Click a step to go
+back to just after it (like many Undos at once); the later steps turn
+grey and can be clicked to go forward again, until you make a new change.
 For a full illustrated guide, open "WaughForm 3D User Manual.pdf".
 
 

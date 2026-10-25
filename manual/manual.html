@@ -145,8 +145,8 @@
 <table>
   <tr><th>Area</th><th>What it's for</th></tr>
   <tr><td><b>Top bar</b></td><td>Files (New, Open, Save, Export), Undo/Redo, the view buttons (Iso, Top, Front…), Units, Resize, Printer, Check Model, Hide, Group, and the Enclosure, Parts, Wiring and Help windows. <b>About</b> shows which version you have.</td></tr>
-  <tr><td><b>Toolbar</b></td><td>The drawing tools (see chapter 5), then the view tools, Group/Ungroup, Hide/Unhide, Check Model, Enclosure and Parts. The icons are coloured by kind (below).</td></tr>
-  <tr><td><b>3D view</b></td><td>Your model on the printer bed. Red, green and blue lines are the X, Y and Z axes.</td></tr>
+  <tr><td><b>Toolbar</b></td><td>The drawing tools, 3D Text, Shell, Hole, Flip and Lay flat (see chapter 5), then the view tools, Group/Ungroup, Join, Subtract, Intersect, Hide/Unhide, Check Model, Enclosure and Parts. The icons are coloured by kind (below).</td></tr>
+  <tr><td><b>3D view</b></td><td>Your model on the printer bed. Red, green and blue lines are the X, Y and Z axes. The <b>view cube</b> in the top right corner turns with the view (see chapter 4). The <b>History</b> panel on the left lists every change, so you can go back several steps at once (see chapter 5).</td></tr>
   <tr><td><b>Status bar</b></td><td>Left: a hint for the tool you're using. Right: the model's size, and the <b>size box</b> where numbers you type appear.</td></tr>
 </table>
 <h3>The toolbar</h3>
@@ -167,11 +167,22 @@
 </table>
 <ul>
   <li><kbd>Shift</kbd>+<kbd>Z</kbd> (or the zoom-extents icon) fits everything in view.</li>
-  <li><b>Right-click</b> (without dragging) on the model opens a menu (picture below) of common jobs: select the whole object, all or none, Delete, Hide, Group, Reverse faces, Round every edge, Zoom to selection, export just the selection, Delete all guides, Check Model. Right-click on something not selected selects it first.</li>
+  <li><b>Right-click</b> (without dragging) on the model opens a menu (picture below) of common jobs: select the whole object, all or none, Delete, Hide, Group, Join, Subtract, Intersect, Flip / Mirror, Lay flat on this face, Reverse faces, Round every edge, Zoom to selection, export just the selection, Delete all guides, Check Model. Right-click on something not selected selects it first.</li>
   <li>The <span class="btn">Iso</span> <span class="btn">Top</span> <span class="btn">Front</span> <span class="btn">Right</span> <span class="btn">Back</span> <span class="btn">Left</span> buttons jump to standard views.</li>
   <li><b>View</b> switches between <i>Perspective</i> (natural, far things smaller) and <i>Parallel</i> (no perspective, good for checking sizes by eye).</li>
 </ul>
 <figure class="xs"><img src="shots/13-right-click.jpg" alt=""><figcaption>The right-click menu. Greyed-out items don't apply to what's selected.</figcaption></figure>
+<h3>The view cube: choosing the side you draw on</h3>
+<p>The cube in the top right corner always turns with your view, so you can see which way you're looking.</p>
+<ul>
+  <li><b>Click a face</b> of the cube (FRONT, RIGHT, TOP…) to look straight at that side. New shapes are then drawn on that side: a light blue grid shows it, and <b>Drawing on: Front</b> appears under the cube. Click that label to go back to drawing on the ground. <b>TOP</b> means the ground, as usual.</li>
+  <li><b>Click an edge or a corner</b> of the cube for an angled view. The side you draw on stays the same.</li>
+  <li><b>Drag the cube</b> to turn the view round, and click <b>⌂</b> (top left of the cube) to go back to the normal view of everything.</li>
+  <li>A shape drawn <i>on a face</i> of your model always goes on that face, whichever side is chosen.</li>
+</ul>
+<p>When you start a new, empty drawing, the cube waits in the middle of the screen and asks which side you want to draw on. Click a side, or <b>Just start on the ground</b>, and it moves out of the way into its corner.</p>
+<figure class="m"><img src="shots/19-cube-start.jpg" alt=""><figcaption>A new drawing: the cube asks which side to draw on (FRONT is highlighted under the mouse).</figcaption></figure>
+<figure class="m"><img src="shots/20-cube-front.jpg" alt=""><figcaption>After clicking FRONT: a 40 × 25 mm rectangle drawn standing up on the front side, seen from a corner of the cube. Its sizes show beside it.</figcaption></figure>
 
 <h2><span class="n">5</span>Drawing</h2>
 <p>WaughForm 3D works like SketchUp: draw a flat shape, then pull it up into 3D.</p>
@@ -189,12 +200,17 @@
   <tr><td>Arc</td><td><kbd>A</kbd></td><td>Click both ends, then move out to set the bulge and click (it snaps to a half circle). An arc drawn across a face cuts it in two.</td></tr>
   <tr><td>Polygon</td><td><kbd>N</kbd></td><td>A hexagon, triangle or any straight-sided shape. Type <code>6s</code>, <code>3s</code>, <code>8s</code>… for the number of sides, then centre and corner.</td></tr>
   <tr><td>3D Shapes</td><td><kbd>D</kbd></td><td>A ball, cone, cylinder or pyramid in one go (see below).</td></tr>
-  <tr><td>Push/Pull</td><td><kbd>P</kbd></td><td>Pull a face into 3D or push it in. Double-click repeats the last distance.</td></tr>
+  <tr><td>Push/Pull</td><td><kbd>P</kbd></td><td>Pull a face into 3D or push it in. Double-click repeats the last distance. <kbd>Shift</kbd>+click several faces first to push them all together (see below).</td></tr>
   <tr><td>Move / Copy</td><td><kbd>M</kbd></td><td>Pick up and drop. Hold <kbd>Ctrl</kbd> to copy; then type <code>5x</code> for five copies in a row.</td></tr>
   <tr><td>Rotate</td><td><kbd>Q</kbd></td><td>Centre, starting angle, end angle (snaps every 15°).</td></tr>
   <tr><td>Round / Chamfer</td><td><kbd>J</kbd></td><td>Click a line where two faces meet to round it off. Type <code>3</code> for 3 mm rounded, <code>3c</code> for a 3 mm straight chamfer. <kbd>Shift</kbd>+click a box to round every edge at once.</td></tr>
   <tr><td>Offset</td><td><kbd>F</kbd></td><td>Click a face, then move in or out: a copy of its outline that far inside or outside it.</td></tr>
   <tr><td>Follow Me</td><td><kbd>W</kbd></td><td>Sweep a face along a selected path (see below).</td></tr>
+  <tr><td>Flip / Mirror</td><td></td><td>Flip the selection over, or add a mirrored copy beside it (see below).</td></tr>
+  <tr><td>Lay flat</td><td></td><td>Click the face that should go down on the bed (see below).</td></tr>
+  <tr><td>Shell</td><td></td><td>Hollow a solid out with walls of a set thickness (see below).</td></tr>
+  <tr><td>Hole</td><td></td><td>Screw holes at printing sizes: clearance, tapped, heat-set insert, countersunk, counterbored, nut trap (see below).</td></tr>
+  <tr><td>3D Text</td><td></td><td>Raised or engraved lettering (see below).</td></tr>
   <tr><td>Slice</td><td><kbd>X</kbd></td><td>Cut a solid in two with a flat plane; move or delete either half (see below).</td></tr>
   <tr><td>Eraser</td><td><kbd>E</kbd></td><td>Click a single line to remove just that line (faces either side join up).</td></tr>
   <tr><td>Paint Bucket</td><td><kbd>B</kbd></td><td>Colour faces.</td></tr>
@@ -203,6 +219,28 @@
   <tr><td>Delete guides</td><td><kbd>Shift</kbd>+<kbd>E</kbd></td><td>Removes all guide points when you've finished with them (toolbar: dashed cross with a red ✕).</td></tr>
   <tr><td>Orbit / Pan / Zoom</td><td><kbd>O</kbd> <kbd>H</kbd> <kbd>Z</kbd></td><td>The same as the mouse controls, for people without a middle button.</td></tr>
 </table>
+<h3>History: going back several steps</h3>
+<p>Every change you make is listed in the <b>History</b> panel on the left: Rectangle, Push/Pull, Circle, Join and so on, newest at the bottom.</p>
+<ul>
+  <li><b>Click a step</b> to go back to the model as it was just after that step, like pressing <kbd>Ctrl</kbd>+<kbd>Z</kbd> many times at once. <b>Start</b> goes back to the beginning.</li>
+  <li>The steps after it turn <b>grey</b>. If you went back too far, click a grey step to go forward again.</li>
+  <li>As soon as you make a new change, the grey steps are thrown away and the new step takes their place.</li>
+  <li>Click the <b>History</b> heading to fold the panel away into a small tab, and again to open it.</li>
+</ul>
+<p>Opening a file or starting a new drawing starts a new history. The last 300 steps are kept.</p>
+<figure class="m"><img src="shots/24-history.jpg" alt=""><figcaption>Four steps: a rectangle pulled into a box, then a circle pushed through it as a hole. Clicking step 2 went back to the plain box; steps 3 and 4 are greyed out and can be clicked to bring the hole back.</figcaption></figure>
+<h3>Changing a size after drawing</h3>
+<p>The shape you have just drawn, or the one you select, shows its sizes beside it: a rectangle its two sides, a circle or polygon its diameter (<b>Ø</b>), and a box its width, depth and height, coloured red, green and blue like the axes. <b>Click a size, type the new one and press <kbd>Enter</kbd></b>. For example, if you drew a rectangle 22 mm long, click <b>22 mm</b> and type <code>30</code>. <kbd>Esc</kbd> leaves it as it was, and <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes a change.</p>
+<figure class="m"><img src="shots/21-sizes.jpg" alt=""><figcaption>A 40 × 30 × 20 mm box showing its sizes. The width has been clicked and 50 typed: press Enter and the box is 50 mm wide.</figcaption></figure>
+<p>A box keeps its left, front and bottom where they are, and its other side moves. A rectangle keeps one corner where it is. A circle grows or shrinks around its centre.</p>
+<h3>Pushing several faces at once</h3>
+<p>Say you draw a rectangle on the ground, then two lines 3 mm in from each end, so it is split into three strips. To pull all three up 10 mm in one go:</p>
+<ol class="steps">
+  <li>Press <kbd>P</kbd> (Push/Pull) and <kbd>Shift</kbd>+click each of the three strips. They turn blue, and the status bar says <b>3 faces picked</b>.</li>
+  <li>Click one of them (without Shift), move up, type <code>10</code> and press <kbd>Enter</kbd>.</li>
+</ol>
+<p>They all rise together as one solid, with no walls left between the strips, so it is ready to print. Faces you have already selected with the Select tool work the same way. (Only faces facing the same way as the one you click are pushed with it.)</p>
+<figure class="m"><img src="shots/22-push-several.jpg" alt=""><figcaption>Three strips picked with Shift+click, being pulled up together.</figcaption></figure>
 <h3>Helpers while you draw</h3>
 <ul>
   <li><b>Snapping:</b> the coloured dot shows what you're on: Endpoint (green), Midpoint (cyan), On Edge (red), On Face (blue).</li>
@@ -246,11 +284,69 @@
 <figure class="xs"><img src="shots/15-slice.jpg" alt=""><figcaption>A cylinder sliced down the middle, with one half moved aside.</figcaption></figure>
 <h3>Copy and paste</h3>
 <p>Select something and press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy it (or <kbd>Ctrl</kbd>+<kbd>X</kbd> to cut it). <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes a copy just to the right of the original, selected and ready to move with <kbd>M</kbd>; paste again for more copies in a row. After a Cut, the first paste goes back where it was. Copy, Cut and Paste are also on the toolbar (grey, next to Undo) and in the right-click menu.</p>
-<h3>Groups and hiding</h3>
+<h3>Groups, joining and hiding</h3>
 <ul>
-  <li><b>Group</b> (<kbd>G</kbd>): select items and group them, so they move and rotate as one solid piece that doesn't stick to other shapes. <b>Ungroup</b> with <kbd>Shift</kbd>+<kbd>G</kbd>.</li>
+  <li><b>Group</b> (<kbd>G</kbd>): select items and group them, so they move and rotate as one piece that doesn't stick to other shapes. <b>Ungroup</b> with <kbd>Shift</kbd>+<kbd>G</kbd>.</li>
+  <li><b>Join</b> (<kbd>U</kbd>): merges two or more objects into <b>one solid</b>. Click one, <kbd>Shift</kbd>+click the others (any face of each will do), then press <kbd>U</kbd> (or the merged-boxes icon, or the right-click menu). Where they overlap or touch, the walls hidden inside go, so the slicer sees a single piece. Objects that don't touch become one group that moves as one. Each must be a closed solid first (Check Model shows any gaps).</li>
+  <li><b>Subtract</b> (<kbd>S</kbd>) and <b>Intersect</b>: see below.</li>
   <li><b>Hide</b> (<kbd>Shift</kbd>+<kbd>H</kbd>): hide selected faces to work on what's behind or inside them. <b>Unhide All</b> with <kbd>Shift</kbd>+<kbd>U</kbd>. Hidden faces are still saved and printed.</li>
 </ul>
+<h3>Subtract and Intersect: cutting one shape out of another</h3>
+<p>The quickest way to make a hole, a slot or a nut trap of any shape: stand the shape where the hole should be, then cut it out.</p>
+<ol class="steps">
+  <li>Draw the object, and the shape to cut out of it standing through it (for a nut trap, a hexagon pulled up through the part with Polygon, <kbd>N</kbd>).</li>
+  <li>With Select, click the object to <b>keep</b> first, then <kbd>Shift</kbd>+click the shape to cut out (more than one if you like).</li>
+  <li>Press <kbd>S</kbd> (or <b>Subtract</b> on the toolbar or the right-click menu).</li>
+</ol>
+<figure class="m"><img src="shots/25-subtract.jpg" alt=""><figcaption>A hexagon post standing through a block, cut out with Subtract: a hex hole, ready for a nut.</figcaption></figure>
+<p><b>Intersect</b> keeps only the part where the selected objects overlap, for example a ball and a box to make a dome. Both need closed solids; if nothing would be left, nothing is changed.</p>
+<h3>Flip and mirror</h3>
+<p>Select an object and click <b>Flip / Mirror</b> on the toolbar (or in the right-click menu):</p>
+<ul>
+  <li><b>Flip</b> left ↔ right, front ↔ back, or <b>turn upside down</b>, where it is.</li>
+  <li><b>Mirror copy</b> to the right, back or on top: a mirrored copy touching the original. Both are left selected, so press <kbd>U</kbd> to join them into one symmetrical part: draw half, mirror the other half.</li>
+</ul>
+<figure class="m"><img src="shots/26-mirror.jpg" alt=""><figcaption>Half of a bracket, mirrored to the right and joined into one part.</figcaption></figure>
+<h3>Lay flat: choosing the face it prints on</h3>
+<p>Choose <b>Lay flat</b> on the toolbar and click the face that should go down on the printer bed. The object turns over to lie on that face, at bed level. (Also in the right-click menu: <b>Lay flat on this face</b>.)</p>
+<h3>3D text</h3>
+<p>Put a label on anything, raised or engraved.</p>
+<ol class="steps">
+  <li>Click <b>3D Text</b> (the T icon). A panel opens on the right: type your text, pick a font (the fonts on your computer), the letter height (of the capital letters) and the depth, and <b>Raised</b> or <b>Engraved</b>.</li>
+  <li>Move over the model: the outline of the text follows the mouse. Click where the text starts, on the ground or on any face. On a wall it stands upright; on the ground it reads from the front.</li>
+</ol>
+<p><b>Raised</b> text is its own object: to fuse it onto the shape, select both and press <kbd>U</kbd>. <b>Engraved</b> text is cut into the face you click (it needs a closed solid).</p>
+<figure class="m"><img src="shots/27-text.jpg" alt=""><figcaption>"ESP32" engraved 1 mm into a box, and "Living room" raised 2 mm on the ground, with the text panel.</figcaption></figure>
+<h3>Holes for screws, inserts and nuts</h3>
+<p>The <b>Hole</b> tool (the target icon) drills screw holes at sizes that work for 3D printing. Printed holes come out a little small, so its clearance holes are a touch bigger than the screw.</p>
+<ol class="steps">
+  <li>Click <b>Hole</b>. In the panel, pick the <b>screw size</b> (M2, M2.5, M3, M4, M5, M6, M8, M10 or M12) and the <b>kind of hole</b>. The panel shows the exact sizes it will cut.</li>
+  <li>Leave <b>Right through</b> ticked, or untick it and set a depth (or type a depth and press <kbd>Enter</kbd>; <code>0</code> means right through).</li>
+  <li>Move over your model: a red circle shows the hole. Click on a face and it is drilled straight in. Snap to a guide point (Tape Measure) or a midpoint to put it in an exact place.</li>
+</ol>
+<table>
+  <tr><th>Kind</th><th>What it's for</th><th>M3 sizes</th></tr>
+  <tr><td>Clearance</td><td>The screw slides through, into a nut or a part below.</td><td>Ø3.4</td></tr>
+  <tr><td>Threaded</td><td>A real metric thread cut into the hole (see below).</td><td>M3 × 0.5</td></tr>
+  <tr><td>Tapped</td><td>A smaller pilot hole: the screw cuts its own thread into the plastic.</td><td>Ø2.6</td></tr>
+  <tr><td>Heat-set insert</td><td>For brass threaded inserts pressed in with a soldering iron (M2 to M5).</td><td>Ø4.0 × 6 deep</td></tr>
+  <tr><td>Countersunk</td><td>Flat-head screws sit flush with the surface.</td><td>Ø3.4 with a Ø6.5 cone</td></tr>
+  <tr><td>Counterbored</td><td>Cap-head screws sit below the surface.</td><td>Ø3.4 with a Ø6.1 × 3.3 step</td></tr>
+  <tr><td>Nut trap</td><td>A hex pocket holds the nut so it can't turn.</td><td>Ø3.4 with a 5.8 mm hex × 2.7 deep</td></tr>
+</table>
+<figure class="m"><img src="shots/29-holes.jpg" alt=""><figcaption>An 8 mm plate with one M3 hole of each kind (left to right: clearance, tapped, insert, countersunk, counterbored, nut trap), and the Hole panel set for a heat-set insert.</figcaption></figure>
+<h4>Threaded holes</h4>
+<p>Choose <b>Threaded</b> and the hole gets a real metric thread at the standard coarse pitch (M3 × 0.5, M8 × 1.25, M12 × 1.75 and so on), cut right through or to the depth you set. It is cut 0.3 mm roomier than the screw, because printed threads come out a little tight, and a small cone at the mouth helps the screw start.</p>
+<div class="tip"><b>Tip:</b> threads from <b>M6</b> up print well. M2 to M5 threads are very fine (ridges only 0.3 to 0.4 mm high) and wear quickly in plastic: a <b>heat-set insert</b> or a <b>tapped</b> hole is stronger for those. Print threaded holes standing upright (the hole pointing up) for the cleanest thread.</div>
+<figure class="s"><img src="shots/30-thread.jpg" alt=""><figcaption>An M12 threaded hole through a 20 mm block, cut in half (with Subtract) to show the thread.</figcaption></figure>
+<h3>Shell: hollowing out</h3>
+<p>Turn a solid box into a tray or a case: choose <b>Shell</b>, type the wall thickness and press <kbd>Enter</kbd> (it starts at 2 mm), then click the face to leave open, e.g. the top.</p>
+<ul>
+  <li><kbd>Shift</kbd>+click to pick more faces to leave open first, then click the last one.</li>
+  <li><kbd>Ctrl</kbd>+click hollows it with no opening (a sealed hollow inside, which slicers print as an empty space).</li>
+  <li>It works on box-like shapes: boxes, cylinders, prisms. For a shape with dents or steps, Offset a face inwards and push the middle in instead.</li>
+</ul>
+<figure class="m"><img src="shots/28-shell.jpg" alt=""><figcaption>A 60 × 40 × 30 mm box shelled with 2 mm walls and the top left open.</figcaption></figure>
 
 <h2 class="flow"><span class="n">6</span>Making it ready to print</h2>
 <figure class="s"><img src="shots/04-enclosure-check.jpg" alt=""><figcaption>Check Model: every line ticked means the model is ready to print.</figcaption></figure>
@@ -444,6 +540,8 @@
   <tr><th>Key</th><th>Does</th></tr>
   <tr><td><kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Fit everything in view</td></tr>
   <tr><td><kbd>G</kbd> / <kbd>Shift</kbd>+<kbd>G</kbd></td><td>Group / Ungroup</td></tr>
+  <tr><td><kbd>U</kbd></td><td>Join the selected objects into one solid</td></tr>
+  <tr><td><kbd>S</kbd></td><td>Subtract: cut the other selected objects out of the first one picked</td></tr>
   <tr><td><kbd>Shift</kbd>+<kbd>H</kbd> / <kbd>Shift</kbd>+<kbd>U</kbd></td><td>Hide / Unhide all</td></tr>
   <tr><td><kbd>Shift</kbd>+<kbd>E</kbd></td><td>Delete all guide points</td></tr>
   <tr><td><kbd>→</kbd> <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Lock to X, Y, Z / unlock</td></tr>
