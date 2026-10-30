@@ -1,6 +1,6 @@
-WaughForm 3D  -  from idea to object
-Version 1.9.7
-© 2026 David John Waugh. Free software under the GNU GPL v3 or later
+﻿WaughForm 3D  -  from idea to object
+Version 1.9.8
+Â© 2026 David John Waugh. Free software under the GNU GPL v3 or later
 (see LICENSE.txt). It comes with no warranty.
 
 Draw your own 3D parts, or let WaughForm 3D design a printable box
@@ -16,11 +16,11 @@ below).
 
 You will have one of these two files. Either one is the whole program:
 
-  WaughForm 3D Portable 1.9.7.exe
+  WaughForm 3D Portable 1.9.8.exe
       Just double-click it. Nothing is installed. It also works from
       a USB stick.
 
-  WaughForm 3D Setup 1.9.7.exe
+  WaughForm 3D Setup 1.9.8.exe
       Installs the program with a Start menu and desktop shortcut.
       Uninstall it any time from Settings > Apps.
 
@@ -149,7 +149,7 @@ one, you show it a photo.
      knows exactly where everything on the board is.
      If the photo was taken the other way round (tall instead of wide),
      the app turns it to match. If it comes out upside down, click
-     "Turn photo 180°".
+     "Turn photo 180Â°".
 
   6. Mark the important bits. Click a button above the picture, then
      click on the photo:
@@ -165,7 +165,7 @@ one, you show it a photo.
                           two "eyes" of an ultrasonic distance sensor,
                           an IR sensor or a camera lens. Set the part to
                           "Face against a wall" and it looks out through
-                          the wall, held on standoffs. These have 45°
+                          the wall, held on standoffs. These have 45Â°
                           braces underneath, so they print without
                           supports.
        Button, LED,
@@ -357,7 +357,7 @@ IN ONE SENTENCE
   board's name plus "fzpz". Someone may already have made one, with
   all the pins, the size and a picture. Download it and drag it onto
   the part picture (or use "Import pins..." > "Use a .fzpz file..."). A board drawn standing up is turned so its
-  long side runs left to right. "Turn part 90°" (under the sizes in
+  long side runs left to right. "Turn part 90Â°" (under the sizes in
   Parts) turns any part a quarter turn, with its picture, features and
   pins.
 
@@ -398,7 +398,7 @@ IN ONE SENTENCE
 =====================================================================
 
   WaughForm 3D was created by David John Waugh.
-  © 2026 David John Waugh.
+  Â© 2026 David John Waugh.
 
   WaughForm 3D is free software: you can share it and change it under
   the terms of the GNU General Public License, version 3 or (at your
@@ -408,12 +408,12 @@ IN ONE SENTENCE
   https://github.com/bullbrand/WaughForm-3D
 
   The enclosure designer uses the Manifold geometry library
-  (© The Manifold Authors, Apache License 2.0), built into the program.
+  (Â© The Manifold Authors, Apache License 2.0), built into the program.
   The optional Claude look-up uses the Anthropic TypeScript SDK
-  (© Anthropic, Apache License 2.0), also built in.
+  (Â© Anthropic, Apache License 2.0), also built in.
   The parts library that comes with WaughForm 3D (over 2,000 parts with
   their pins and pictures) is made from the Fritzing parts library,
-  © Fritzing contributors, licensed under CC BY-SA 3.0
+  Â© Fritzing contributors, licensed under CC BY-SA 3.0
   (https://creativecommons.org/licenses/by-sa/3.0/). Parts made from it,
   or brought in with "Import pins...", keep that credit in their notes,
   and anyone sharing them must keep the credit and the same licence.

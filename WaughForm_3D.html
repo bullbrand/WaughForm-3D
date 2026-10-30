@@ -4342,6 +4342,19 @@ function allParts(){
 }
 const partById=id=>allParts().find(p=>p.id===id)||null;
 const newPartId=()=>'p-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+// How far a part's sizes can be trusted, shown as a label and checked by the Enclosure report: measured (checked
+// with calipers), drawing (a maker's dimension drawing or a CAD library) or approx (Fritzing pictures, which are
+// drawn for wiring diagrams, AI memory, photo estimates). A part without its own setting gets one from its notes.
+const ACC={measured:'✅ Measured',drawing:'📐 From a drawing',approx:'⚠️ Approximate',unknown:'Not checked'};
+function accOf(p){
+  if(ACC[p.acc])return p.acc;
+  if(builtinById(p.id)&&!custom.some(c=>c.id===p.id))return 'drawing';
+  const n=p.notes||'';
+  if(/\bMeasured \d/.test(n))return 'measured';
+  if(/Fritzing contributors|photo estimate|own knowledge|AI's memory|similar listings|seller (figures|pages)/i.test(n))return 'approx';
+  if((p.info&&p.info.credit)||/Eagle library|Sizes read by AI from "/i.test(n))return 'drawing';
+  return 'unknown';
+}
 function tidyPart(p){
   p.w=Math.max(0.5,num(p.w,10));p.d=Math.max(0.5,num(p.d,10));p.pcb=Math.max(0,num(p.pcb,1.6));p.h=Math.max(0,num(p.h,0));p.below=Math.max(0,num(p.below,0));
   if(!TYPES[p.type])p.type='other';if(p.shape!=='round')p.shape='rect';if(p.mount!=='wall')p.mount='floor';
@@ -4689,6 +4702,7 @@ function report(L){
     if(!it.o)continue;const p=it.o.p,nm='<b>'+esc(p.name)+'</b>';
     if(it.bad)bad(nm+' '+esc(it.bad));
     if(it.warn)warn(nm+' '+esc(it.warn));
+    if(accOf(p)==='approx')warn(nm+': its sizes are approximate (e.g. from a Fritzing picture, which is drawn for wiring diagrams): measure it and use "Check size" in the Parts Library before printing');
     if(it.kind==='wall'){
       const F=p.features||[];
       if(F.some(f=>f.t==='mic'))ok(nm+': sound hole through the '+SIDE_NAME[it.wall].toLowerCase()+' wall'+(it.z0>2?', '+fx(it.z0)+' mm up':''));
@@ -5339,7 +5353,7 @@ function thumb(cv,p){
 }
 function renderList(){
   const L=$('plList');
-  L.innerHTML=allParts().map(p=>`<div class="plItem${ed&&ed.id===p.id?' on':''}" data-id="${esc(p.id)}"><canvas width="64" height="44"></canvas><div class="t"><b>${esc(p.name)}</b><small>${esc(typeOf(p).name)} · ${fx(p.w)} × ${fx(p.d)} mm${p.builtin?' · built-in':builtinById(p.id)?' · edited':''}</small></div></div>`).join('');
+  L.innerHTML=allParts().map(p=>`<div class="plItem${ed&&ed.id===p.id?' on':''}" data-id="${esc(p.id)}"><canvas width="64" height="44"></canvas><div class="t"><b>${esc(p.name)}</b><small>${esc(typeOf(p).name)} · ${fx(p.w)} × ${fx(p.d)} mm${p.builtin?' · built-in':builtinById(p.id)?' · edited':''}${accOf(p)==='unknown'?'':' · <span title="Sizes: '+esc(ACC[accOf(p)].slice(2))+'">'+ACC[accOf(p)].split(' ')[0]+'</span>'}</small></div></div>`).join('');
   L.querySelectorAll('.plItem').forEach(el=>thumb(el.querySelector('canvas'),partById(el.dataset.id)));
 }
 $('plList').addEventListener('click',e=>{const el=e.target.closest('.plItem');if(el)selectPart(el.dataset.id);});
@@ -5357,6 +5371,7 @@ ${aiProv()==='claude'?'<div class="ewNote">Claude is paid per use from your Anth
   aiProv()==='nvidia'?'<div class="ewNote">NVIDIA is free but can\'t search the web: <b>Look up online</b> uses what it already knows, so check every size. It reads pictures of drawings (not PDFs) and works in the desktop app only.</div>':''}
 <div class="ewNote"><b>Look up online</b>: type the part number and the AI finds the sizes and fills them in. Or save a dimension drawing and use <b>Read a drawing</b> (or drag it onto the picture, or Ctrl+V). Always check the draft before saving.</div></div>
 <label class="f"><span>Name</span><input type="text" data-p="name" value="${p.name==='New part'?'':esc(p.name)}" placeholder="New part: type its name"></label>
+<div class="ewRow"><label title="How far this part's sizes can be trusted. Fritzing pictures are drawn for wiring diagrams, so their outlines are often too small: measure the board and use Check size.">Sizes <select data-p="acc">${opt(ACC,accOf(p))}</select></label><button id="plCheck" title="Type the sizes you measured with calipers or a ruler: the outline changes, pins and features keep their spacing">Check size…</button></div>
 <label class="f"><span>Type</span><select data-p="type">${opt(Object.fromEntries(Object.entries(TYPES).map(([k,v])=>[k,v.name])),p.type)}</select></label>
 <label class="f"><span>Shape</span><select data-p="shape">${opt({rect:'Rectangle',round:'Round'},p.shape)}</select></label>
 <label class="f"><span>${p.shape==='round'?'Diameter':'Length (left → right)'}</span><input type="number" data-p="w" value="${p.w}" step="0.1" min="0.5"> mm</label>
@@ -5469,6 +5484,7 @@ $('plEdit').addEventListener('click',async e=>{
   if(id==='plAiReply'){WF.askText('This is exactly what Google sent back. To get help, take a screenshot of this box.\n\n'+aiLastReply.slice(0,2500),'');return;}
   if(el.closest&&el.closest('#plRef')){refDraw.big=!refDraw.big;$('plRef').classList.toggle('big',refDraw.big);return;}
   if(id==='plBigBtn'){setBig(!plBig);return;}
+  if(id==='plCheck'){checkSize();return;}
   if(id==='plCancelPhoto'){edMode='select';clicks=[];rawImg=null;renderEditor();return;}
   if(id==='plUndoClick'){clicks.pop();setHint();drawEd();return;}
   if(id==='plNoPins'){finishSide(null);return;}
@@ -5632,6 +5648,39 @@ function updPinRow(i,typing){
   document.querySelectorAll('.plPins tr[data-prow]').forEach(tr=>tr.classList.toggle('on',+tr.dataset.prow===edPin));
   const q=ed.pins[i];if(!q)return;
   for(const [k,a] of [['x','px'],['y','py']]){const el=document.querySelector(`[data-${a}="${i}"]`);if(el&&el!==typing)el.value=q[k]===undefined?'':fx(toShow(k,q[k]));}
+}
+// "Check size": type the sizes measured with calipers. The outline changes to them; pins and features keep their
+// spacing (Fritzing usually gets that right even when its outline is too small) and stay where they are measured
+// from the chosen corner (or centre), so the board grows or shrinks around them. Then the part counts as measured.
+function checkSize(){
+  const o=orig(),round=ed.shape==='round',back=document.createElement('div');back.id='askBack';
+  back.innerHTML=`<div id="askBox" class="keyBox"><b>Check size</b><span class="ewNote">: ${esc(ed.name)}</span>
+<div class="ewNote" style="margin:6px 0 8px">Measure the board with calipers or a ruler and type what you get. Pins and features keep their spacing and stay where they are, measured from the <b>${esc(ORIGINS[o].toLowerCase())}</b> (change that with "Measure from"). Check afterwards that they line up, and drag any that don't.</div>
+<label class="f"><span>${round?'Diameter':'Length (left → right)'}</span><input type="number" step="0.1" data-c="w" value="${fx(ed.w)}"> mm</label>
+${round?'':`<label class="f"><span>Width (bottom → top)</span><input type="number" step="0.1" data-c="d" value="${fx(ed.d)}"> mm</label>`}
+<label class="f"><span>Total height</span><input type="number" step="0.1" data-c="t" value="${fx(ed.pcb+ed.h)}"> mm</label>
+<div class="ewNote">Total height: from the bottom of the board to the top of its tallest part (pins underneath not counted).</div>
+<div class="kTest"></div>
+<div class="btns"><button data-ok>Use these sizes</button><button data-cancel>Cancel</button></div></div>`;
+  const box=back.querySelector('#askBox'),val=k=>{const el=box.querySelector(`[data-c="${k}"]`);return el?parseFloat(el.value):NaN;};
+  const done=()=>back.remove();
+  const apply=()=>{
+    const W1=val('w'),D1=round?W1:val('d'),T=val('t');
+    if(!(W1>=0.5&&D1>=0.5)){box.querySelector('.kTest').innerHTML='<span class="bad">Type the length and width in mm.</span>';return;}
+    const sx=o==='c'?(W1-ed.w)/2:0,sy=o==='c'?(D1-ed.d)/2:o==='tl'?D1-ed.d:0,r2=v=>+v.toFixed(2);
+    for(const f of ed.features){
+      if(!isEdge(f)){f.x=r2(f.x+sx);f.y=r2(f.y+sy);}
+      else if(f.u!==undefined)f.u=r2(f.u+(f.side==='xmin'||f.side==='xmax'?sy:sx));
+    }
+    for(const q of ed.pins||[])if(q.x!==undefined){q.x=r2(q.x+sx);q.y=r2(q.y+sy);}
+    const was=fx(ed.w)+' × '+fx(ed.d);
+    ed.w=r2(W1);ed.d=r2(D1);if(T>0)ed.h=r2(Math.max(0,T-ed.pcb));
+    ed.acc='measured';done();markDirty();renderEditor();
+    WF.flash('Now '+fx(ed.w)+' × '+fx(ed.d)+' mm (was '+was+'), marked as measured. Check the pins and features line up, then Save part.',8000);
+  };
+  box.addEventListener('click',e=>{if(e.target.hasAttribute('data-ok'))apply();else if(e.target.hasAttribute('data-cancel'))done();});
+  box.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')apply();else if(e.key==='Escape')done();});
+  document.body.appendChild(back);box.querySelector('input').focus();box.querySelector('input').select();
 }
 // The nearest gold pin dot within reach of a point on the part, or -1.
 function pinAt(x,y){
@@ -6332,6 +6381,7 @@ function applyDrawing(d,src,sources){
     F.push(o);
   }
   ed.features=F;tidyPart(ed);
+  ed.acc=refDraw?'drawing':'approx';// read from a dimension drawing, or from the web or the AI's memory
   const unsure=(Array.isArray(d.uncertain)?d.uncertain:[]).map(String).filter(Boolean).slice(0,8);
   sources=sources||[];
   const stamp='Sizes read by AI from '+src+' on '+new Date().toLocaleDateString()+'. Check them before printing.'+(sources.length?'\nSources: '+sources.map(s=>s.uri).join(' '):'');
@@ -7158,6 +7208,7 @@ async function applyFritzingData(d){
       ed.mount=TYPES[ed.type].mount;}
     if(g){ed.shape='rect';ed.w=+g.w.toFixed(2);ed.d=+g.h.toFixed(2);if(g.photo)ed.photo=g.photo;}
     if(g&&holes.length)ed.features=[...ed.features.filter(f=>f.t!=='hole'),...holes];
+    if(g)ed.acc=info&&info.credit?'drawing':'approx';// Eagle outlines are real; Fritzing pictures are for wiring diagrams
   }
   if(ctrl&&/esp32-?s3/i.test(title))ed.mcu='esp32s3';
   // each library's licence asks for its credit wherever its parts are used (Fritzing: CC BY-SA 3.0; Eagle parts carry their own)

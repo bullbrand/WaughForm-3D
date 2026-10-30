@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "waughform-3d",
   "productName": "WaughForm 3D",
-  "version": "1.9.7",
+  "version": "1.9.8",
   "description": "WaughForm 3D: from idea to object",
   "author": "David John Waugh",
   "license": "GPL-3.0-or-later",
@@ -15,7 +15,7 @@
   "build": {
     "appId": "uk.davidjohnwaugh.waughform3d",
     "productName": "WaughForm 3D",
-    "copyright": "© 2026 David John Waugh",
+    "copyright": "Â© 2026 David John Waugh",
     "directories": {
       "output": "dist"
     },
