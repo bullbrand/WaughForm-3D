@@ -4249,8 +4249,8 @@ const FEAT={
   cone:{name:'Speaker cone',def:{x:10,y:10,cw:30,ch:30},tip:'Gets a grille in the wall (or lid) in front of it.'},
   opening:{name:'Round opening',def:{x:5,y:5,dia:16},tip:'A round hole through the wall (or lid) the part faces, for ultrasonic transducers, IR sensors, buzzers or camera lenses. A wall part with openings faces the wall with its component side.'},
   hole:{name:'Mounting hole',def:{x:3,y:3,dia:3},tip:'Gets a screw post with a pilot hole (or a locating peg for wall parts).'},
-  button:{name:'Button',def:{x:5,y:5,dia:4},tip:'Gets a hole in the lid above it.'},
-  led:{name:'LED',def:{x:5,y:5,dia:3},tip:'Gets a small light hole in the lid above it.'},
+  button:{name:'Button',def:{x:5,y:5,dia:4,lid:'hole',bh:1.5},tip:'What the lid gets above it: a finger hole, a 1.5 mm hole for a paper clip (reset buttons), or a flex button: a springy tab cut into the lid with a post underneath that presses the button. Set "Button height" (how tall the switch is above the board) so the post stops just above it.'},
+  led:{name:'LED',def:{x:5,y:5,dia:3,poke:0},tip:'Gets a light hole in the lid above it. Set "Pokes out" to have the LEDs stand that many mm out of the lid: the part is raised on taller posts to reach, however high the box is.'},
   header:{name:'Pin header row',def:{x:10,y:2,fw:20,fd:2.54,dir:'down'},tip:'Pins are kept clear of the rails. Prototype style adds room for Dupont plugs above or below.'},
   heat:{name:'Gets hot',def:{x:5,y:5,fw:10,fd:10},tip:'Gets vent slots in the lid above it.'},
   window:{name:'Display window',def:{x:10,y:10,fw:20,fd:12},tip:'Gets a window cut in the lid.'},
@@ -4258,7 +4258,7 @@ const FEAT={
 };
 const EDGE_FEATS=['port','switch','antenna','wire'],RECT_FEATS=['cone','header','heat','window'];
 const FFIELDS={port:['kind','thru','side','u','zc','pw','ph'],switch:['side','u','zc','pw','ph'],antenna:['side','u','len','width'],wire:['side','u','dia'],
-  mic:['x','y','dia'],cone:['x','y','cw','ch'],opening:['x','y','dia'],hole:['x','y','dia'],button:['x','y','dia'],led:['x','y','dia'],
+  mic:['x','y','dia'],cone:['x','y','cw','ch'],opening:['x','y','dia'],hole:['x','y','dia'],button:['x','y','lid','dia','bh'],led:['x','y','dia','poke'],
   header:['x','y','fw','fd','dir'],heat:['x','y','fw','fd'],window:['x','y','fw','fd'],cutout:['thru','shape','x','y','cw','ch']};
 const THRU={wall:'side wall',lid:'lid',floor:'floor'};
 // Sits on an edge and opens through that side wall (side, u). A port set to open through the lid or the floor, and a
@@ -4269,9 +4269,11 @@ function fieldsOf(f){
   const wall=isEdge(f);
   if(f.t==='port')return wall?['kind','thru','side','u','zc','pw','ph']:['kind','thru','x','y','pw','ph'];
   if(f.t==='cutout')return ['thru','shape',...(wall?['side','u','zc']:['x','y']),'cw',...(f.shape==='rect'?['ch']:[])];
+  if(f.t==='button')return ['x','y','lid',...(f.lid==='pin'?[]:['dia']),...(f.lid==='flex'?['bh']:[])];
   return FFIELDS[f.t];
 }
-const FLABEL={x:'X',y:'Y',dia:'Ø',cw:'Width',ch:'Height',fw:'Length',fd:'Width',u:'Along edge',zc:'Centre above PCB',pw:'Cut-out W',ph:'Cut-out H',len:'Depth',width:'Width',side:'Edge',dir:'Pins point',kind:'Type',thru:'Opens through',shape:'Shape'};
+const BUTTON_LID={hole:'finger hole',pin:'paper-clip hole',flex:'flex button'};
+const FLABEL={x:'X',y:'Y',dia:'Ø',cw:'Width',ch:'Height',fw:'Length',fd:'Width',u:'Along edge',zc:'Centre above PCB',pw:'Cut-out W',ph:'Cut-out H',len:'Depth',width:'Width',side:'Edge',dir:'Pins point',kind:'Type',thru:'Opens through',shape:'Shape',poke:'Pokes out (mm)',lid:'In the lid',bh:'Button height'};
 // Port cut-out sizes: big enough for the plug's moulded body to reach the socket.
 const PORT_KINDS={'USB-C':[12.5,7],'2× USB-C':[25,8],'Micro-USB':[11,8],'Mini-USB':[11,8.5],'USB-A':[16,9],'DC barrel':[10,10],'3.5 mm jack':[7,7],'microSD':[14,3.5],'JST / wires':[7,5],'Custom':null};
 const ROUND_KINDS=new Set(['DC barrel','3.5 mm jack']);
@@ -4581,8 +4583,7 @@ function finishLayout(W,D,items,st){
   if(wiz.size==='min')H=Math.max(H,num(wiz.sH,0));
   if(wiz.size==='exact')H=num(wiz.sH,H);
   L.H=H;
-  // Displays go right up under the lid so they show through their window.
-  for(const it of items)if(it.kind==='floor')it.zb=it.o.type==='display'?Math.max(it.o.zb,H-0.8-it.o.pcb-it.o.h):it.o.zb;
+  for(const it of items)if(it.kind==='floor')it.zb=raisedZb(it,H,st);
   return L;
 }
 const outerSize=L=>{const st=L.st,t=st.wall;return {w:L.W+2*t+(st.ears?24:0),d:L.D+2*t,h:st.floor+L.H,lid:st.floor+(st.lid==='screws'?0:LIP)};};
@@ -4651,8 +4652,19 @@ function revalidate(L){
   L.H=heightFor(L.items,L,st);
   if(wiz.size==='min')L.H=Math.max(L.H,num(wiz.sH,0));
   if(wiz.size==='exact')L.H=num(wiz.sH,L.H);
-  for(const it of real)if(it.kind==='floor')it.zb=it.o.type==='display'?Math.max(it.o.zb,L.H-0.8-it.o.pcb-it.o.h):it.o.zb;
+  for(const it of real)if(it.kind==='floor')it.zb=raisedZb(it,L.H,st);
   return L;
+}
+// How far LEDs should stand out of the lid (the largest "Pokes out" of a part's LEDs, 0 if none).
+const pokeOf=p=>Math.max(0,...(p.features||[]).filter(f=>f.t==='led').map(f=>num(f.poke,0)));
+// Height of a floor part's underside once the box height H is known. Displays go right up under the lid so they show
+// through their window. A part whose LEDs poke out is raised so the LED tops (its tallest point, "Tallest part on top")
+// stand that far out of the lid: its posts or rails grow to match, however tall other parts make the box. It is never
+// raised so far that the board itself would reach the lid.
+function raisedZb(it,H,st){
+  const o=it.o,poke=pokeOf(o.p);
+  if(poke>0)return Math.max(o.zb,Math.min(H+st.floor+poke-o.pcb-o.h,H-0.5-o.pcb));
+  return o.type==='display'?Math.max(o.zb,H-0.8-o.pcb-o.h):o.zb;
 }
 // Wall item: lowest height it can sit at without hitting anything.
 function settleWall(it,L){
@@ -4698,7 +4710,19 @@ function report(L){
     if(it.o.holes&&it.o.holes.length)ok(nm+': '+it.o.holes.length+' screw post'+(it.o.holes.length>1?'s':'')+(it.zb>2?' ('+fx(it.zb)+' mm tall)':''));
     else if(it.o.pcb>0)ok(nm+': sits on rails '+fx(it.zb)+' mm high'+(it.o.below>1?' (clears '+fx(it.o.below)+' mm of pins underneath)':'')+', with end stops');
     else ok(nm+': held by corner clips');
-    for(const f of (p.features||[]).filter(f=>f.t==='button')){const depth=L.H-(it.zb+it.o.pcb+it.o.h);if(depth>6)warn(nm+': a button is '+fx(depth)+' mm below the lid: press it through the hole with a pin, or fit a taller button');}
+    const poke=pokeOf(p);
+    if(poke>0){// LEDs through the lid: say how far they stand out, or why they can't
+      const out=it.zb+it.o.pcb+it.o.h-(L.H+st.floor);
+      if(out>=poke-0.05)ok(nm+': LEDs stand '+fx(out)+' mm out of the lid (raised '+fx(it.zb)+' mm off the floor)');
+      else warn(nm+': its LEDs only reach '+(out>0?fx(out)+' mm out of':fx(-out)+' mm below the top of')+' the lid, not '+fx(poke)+' mm out: set "Tallest part on top" to the LEDs\' real height above the board');
+    }
+    for(const f of (p.features||[]).filter(f=>f.t==='button'&&(f.lid==='flex'||f.lid==='pin'))){
+      const sw=it.zb+it.o.pcb+num(f.bh,1.5),under=L.H+st.floor-Math.min(1.2,st.floor-0.4);
+      if(f.lid==='pin'){const d=L.H+st.floor-sw;ok(nm+': 1.5 mm paper-clip hole above a button'+(d>18?' ('+fx(d)+' mm down: use a long pin)':''));}
+      else if(under-(sw+0.4)>=0.5)ok(nm+': button pressed through a flex tab in the lid (post '+fx(under-(sw+0.4))+' mm long)');
+      else warn(nm+': a flex button\'s switch is almost touching the lid: check its "Button height", or use a paper-clip hole');
+    }
+    for(const f of (p.features||[]).filter(f=>f.t==='button'&&!(f.lid==='flex'||f.lid==='pin'))){const depth=L.H-(it.zb+it.o.pcb+it.o.h);if(depth>6)warn(nm+': a button is '+fx(depth)+' mm below the lid: press it through the hole with a pin, or fit a taller button');}
   }
   if(st.headUp||st.headDown)ok('Dupont headroom: '+st.headUp+' mm above upward pins, '+st.headDown+' mm below downward pins');
   if(st.cable)ok('Cable slot in the wall for jumper wires and leads');
@@ -4740,9 +4764,24 @@ async function buildSolids(L){
       else m=K(M.hull([[u0+r,z0+r],[u1-r,z0+r],[u1-r,z1-r],[u0+r,z1-r]].map(([u,z])=>cylN(u,z,n0,n1,r))));
       return toWall(m,wl);
     };
-    const adds=[],subs=[],lidAdds=[],lidSubs=[],cutsPerWall={xmin:[],xmax:[],ymin:[],ymax:[]};
+    const adds=[],subs=[],lidAdds=[],lidSubs=[],lidAfter=[],cutsPerWall={xmin:[],xmax:[],ymin:[],ymax:[]};// lidAfter: added once the lid's holes are cut
     const lidHole=(x,y,r)=>lidSubs.push(cylZ(x,y,H-LIP-1,H+lt+1,r));
     const lidRect=(x0,y0,x1,y1)=>lidSubs.push(rbox(x0,y0,H-LIP-1,x1,y1,H+lt+1,0.6));
+    // A flex button in the lid: a tab cut free on three sides by a 0.6 mm slot (the fourth side is the hinge), thinned
+    // underneath so it springs, with a Ø3 post that stops just above the switch (stop: height of the post's end).
+    // It is part of the lid, so nothing can fall into the box, and it prints with the lid (post pointing up).
+    const flexButton=(x,y,stop)=>{
+      const g=0.6,tw=7,free=3.5,tabT=Math.min(1.2,lt-0.4),m=LIP_T+LID_CLEAR+0.5;
+      const [dx,dy,room]=[[1,0,W-x],[-1,0,x],[0,1,D-y],[0,-1,y]].sort((a,b)=>b[2]-a[2])[0];// hinge toward the most room
+      const tl=Math.max(7,Math.min(12,room-m+free)),s0=-free,s1=tl-free;
+      // a box in tab directions (s toward the hinge, c across) as a world-axis cube
+      const rect=(a0,a1,c0,c1,z0,z1)=>{const P=[[a0,c0],[a1,c1]].map(([s,c])=>[x+s*dx-c*dy,y+s*dy+c*dx]);
+        return cube(Math.min(P[0][0],P[1][0]),Math.min(P[0][1],P[1][1]),z0,Math.max(P[0][0],P[1][0]),Math.max(P[0][1],P[1][1]),z1);};
+      lidSubs.push(rect(s0-g,s0,-tw/2-g,tw/2+g,H-LIP-1,H+lt+1),rect(s0-g,s1,tw/2,tw/2+g,H-LIP-1,H+lt+1),rect(s0-g,s1,-tw/2-g,-tw/2,H-LIP-1,H+lt+1));
+      if(lt-tabT>0.15)lidSubs.push(rect(s0,s1,-tw/2,tw/2,H-LIP-1,H+lt-tabT));
+      const under=H+lt-tabT,end=Math.min(stop,under-0.5);
+      lidAfter.push(cylZ(x,y,end,under+0.3,1.5,24));
+    };
     // through the floor: cut up to just under the part (top), so rails or posts under it don't block the hole
     const floorHole=(x,y,r,top)=>subs.push(cylZ(x,y,-f-1,Math.max(0.3,top-0.2),r));
     const floorRect=(x0,y0,x1,y1,top)=>subs.push(rbox(x0,y0,-f-1,x1,y1,Math.max(0.3,top-0.2),0.6));
@@ -4875,7 +4914,9 @@ async function buildSolids(L){
           subs.push(wallCut(s,u-hw,u+hw,H-ft.dia-2,H+1,hw));
           if(st.lid!=='screws')lidSubs.push(wallCut(s,u-hw-0.5,u+hw+0.5,H-LIP-1,H+0.05,0,-1,LIP_T+LID_CLEAR+1));
           cutsPerWall[s].push([u-hw,u+hw]);
-        }else if(ft.t==='button'){const [x,y]=pt(ft.x,ft.y);lidHole(x,y,ft.dia/2+0.6);}
+        }else if(ft.t==='button'){const [x,y]=pt(ft.x,ft.y);
+          if(ft.lid==='flex')flexButton(x,y,zb+o.pcb+num(ft.bh,1.5)+0.4);// the post stops 0.4 mm above the switch
+          else lidHole(x,y,ft.lid==='pin'?0.75:ft.dia/2+0.6);}// a 1.5 mm hole takes a straightened paper clip
         else if(ft.t==='led'){const [x,y]=pt(ft.x,ft.y);lidHole(x,y,Math.max(1,ft.dia/2+0.3));}
         else if(ft.t==='mic'){const [x,y]=pt(ft.x,ft.y);lidHole(x,y,Math.max(1.25,ft.dia/2+0.25));}
         else if(ft.t==='opening'){const [x,y]=pt(ft.x,ft.y);lidHole(x,y,Math.max(1,ft.dia/2+0.4));}
@@ -4943,6 +4984,7 @@ async function buildSolids(L){
     }
     if(lidAdds.length)lid=K(M.union([lid,...lidAdds]));
     if(lidSubs.length)lid=K(M.difference([lid,...lidSubs]));
+    if(lidAfter.length)lid=K(M.union([lid,...lidAfter]));
     const meshOf=m=>{const g=m.getMesh(),n=g.numProp,v=g.vertProperties,tv=g.triVerts,P=[];for(let i=0;i<v.length;i+=n)P.push([v[i],v[i+1],v[i+2]]);return {P,T:tv};};
     const status=[base.status(),lid.status()];
     return {base:meshOf(base),lid:meshOf(lid),baseVol:base.volume(),lidVol:lid.volume(),status};
@@ -5348,6 +5390,7 @@ function renderFeats(){
   box.innerHTML=ed.features.map((f,i)=>{
     const fields=fieldsOf(f).map(k=>{
       if(k==='thru')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="thru">${Object.entries(THRU).map(([v,n])=>`<option value="${v}"${(f.thru||'wall')===v?' selected':''}>${n}</option>`).join('')}</select></label>`;
+      if(k==='lid')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="lid">${Object.entries(BUTTON_LID).map(([v,n])=>`<option value="${v}"${(f.lid||'hole')===v?' selected':''}>${n}</option>`).join('')}</select></label>`;
       if(k==='shape')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="shape"><option value="round"${f.shape!=='rect'?' selected':''}>round</option><option value="rect"${f.shape==='rect'?' selected':''}>rectangle</option></select></label>`;
       if(f.t==='cutout'&&(k==='cw'||k==='ch'))return `<label>${k==='cw'?(f.shape==='rect'?(isEdge(f)?'Width':'Length'):'Ø'):(isEdge(f)?'Height':'Width')} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(f[k])}"></label>`;
       if(k==='side')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="side">${['xmin','xmax','ymin','ymax'].map(s=>`<option value="${s}"${f.side===s?' selected':''}>${EDGE_NAME[s]}</option>`).join('')}</select></label>`;
