@@ -1,4 +1,4 @@
-﻿WaughForm 3D  -  from idea to object
+WaughForm 3D  -  from idea to object
 Version 1.9.8
 Â© 2026 David John Waugh. Free software under the GNU GPL v3 or later
 (see LICENSE.txt). It comes with no warranty.
