@@ -40,6 +40,15 @@ To test the app as if Fritzing weren't installed, set WF_NO_FRITZING=1 before st
 Also copy parts-library.json next to ..\WaughForm_3D.html: the web-page version asks for it once
 (on the first "Browse parts...") and keeps it in the browser.
 
+Eagle parts (eagle-parts.json, built into the app and listed in "Browse parts..." with the others):
+board-sized modules taken from Eagle part libraries (.lbr). To remake it, put the .lbr files in a folder
+and run (Python 3):
+  python tools\eagle-to-parts.py <that folder>
+It keeps boards, not single chips, with their outline, mounting holes and pin names, and skips boards
+already in parts-library.json. Each part keeps its library's credit and licence: SparkFun is CC BY-SA 4.0,
+the Ai libraries Beerware; Adafruit, Seeed and OPL state none in their downloads, so check before sharing.
+In the web-page version, choose eagle-parts.json together with parts-library.json.
+
 First-time setup on another PC: install Node.js, then in this folder run
   npm install
   node node_modules\electron\install.js

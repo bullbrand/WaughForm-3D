@@ -1,5 +1,5 @@
 WaughForm 3D  -  from idea to object
-Version 1.9.5
+Version 1.9.6
 © 2026 David John Waugh. Free software under the GNU GPL v3 or later
 (see LICENSE.txt). It comes with no warranty.
 
@@ -16,11 +16,11 @@ below).
 
 You will have one of these two files. Either one is the whole program:
 
-  WaughForm 3D Portable 1.9.5.exe
+  WaughForm 3D Portable 1.9.6.exe
       Just double-click it. Nothing is installed. It also works from
       a USB stick.
 
-  WaughForm 3D Setup 1.9.5.exe
+  WaughForm 3D Setup 1.9.6.exe
       Installs the program with a Start menu and desktop shortcut.
       Uninstall it any time from Settings > Apps.
 

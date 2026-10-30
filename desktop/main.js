@@ -36,6 +36,19 @@ ipcMain.handle('fetch-pdf', async (e, url) => {
   } finally { clearTimeout(timer); }
 });
 
+// Pass a request on to NVIDIA's free AI (part look-up, reading drawings, wiring code). NVIDIA's servers don't let
+// web pages call them directly (browser security), so the app sends it here. NVIDIA's address only; the key is the user's own.
+ipcMain.handle('ai-post', async (e, url, key, body) => {
+  if (typeof url !== 'string' || !url.startsWith('https://integrate.api.nvidia.com/v1/') || url.length > 300) throw new Error('not an AI address');
+  if (typeof body !== 'string' || body.length > 2e7) throw new Error('request too big');
+  const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 180000);
+  try {
+    const r = await net.fetch(url, {method: 'POST', signal: ctrl.signal, body,
+      headers: {'Content-Type': 'application/json', Accept: 'application/json', Authorization: 'Bearer ' + String(key)}});
+    return {status: r.status, text: await r.text()};
+  } finally { clearTimeout(timer); }
+});
+
 // Fritzing parts installed on this computer (read only): a list of their titles, then one part's
 // description (.fzp) and its breadboard picture (.svg). Only files inside the Fritzing parts folders.
 const fs = require('fs');
@@ -78,16 +91,34 @@ function partsLibrary() {
   catch (e) { library = []; }
   return library;
 }
+// Extra boards converted from Eagle part libraries by tools\eagle-to-parts.py: always listed, Fritzing or not,
+// with numbers from EAGLE_ID up so they don't clash with the other parts.
+let eagle = null;
+const EAGLE_ID = 100000;
+function eagleParts() {
+  if (eagle) return eagle;
+  try { eagle = JSON.parse(fs.readFileSync(path.join(__dirname, 'eagle-parts.json'), 'utf8')).parts || []; }
+  catch (e) { eagle = []; }
+  return eagle;
+}
+const listed = (p, id) => ({id, title: p.title, folder: p.folder, library: true, family: p.info.family || '', tags: p.info.tags || [], desc: (p.info.description || '').slice(0, 300)});
+const loaded = d => ({data: {title: d.title, conns: d.conns, info: d.info, g: d.g, file: d.file, features: d.features}});
 const useLibrary = async () => !(await scanFritzing()).length;
 // The list to search: name, kind (family), tags and the start of the description of every part.
-ipcMain.handle('fritzing-list', async () => (await useLibrary())
-  ? partsLibrary().map((p, id) => ({id, title: p.title, folder: p.folder, library: true, family: p.info.family || '', tags: p.info.tags || [], desc: (p.info.description || '').slice(0, 300)}))
-  : (await scanFritzing()).filter(p => p.folder !== 'obsolete').map(p => ({...p, id: fritzingParts.indexOf(p)})).map(p => ({id: p.id, title: p.title, folder: p.folder, family: p.family, tags: p.tags, desc: p.desc})));
+ipcMain.handle('fritzing-list', async () => [...((await useLibrary())
+  ? partsLibrary().map(listed)
+  : (await scanFritzing()).filter(p => p.folder !== 'obsolete').map(p => ({...p, id: fritzingParts.indexOf(p)})).map(p => ({id: p.id, title: p.title, folder: p.folder, family: p.family, tags: p.tags, desc: p.desc}))),
+  ...eagleParts().map((p, i) => listed(p, EAGLE_ID + i))]);
 ipcMain.handle('fritzing-load', async (e, id) => {
+  if (id >= EAGLE_ID) {
+    const d = eagleParts()[id - EAGLE_ID];
+    if (!d) throw new Error('no such part');
+    return loaded(d);
+  }
   if (await useLibrary()) {
     const d = partsLibrary()[id];
     if (!d) throw new Error('no such part');
-    return {data: {title: d.title, conns: d.conns, info: d.info, g: d.g, file: d.file}};
+    return loaded(d);
   }
   const p = (await scanFritzing())[id];
   if (!p) throw new Error('no such part');

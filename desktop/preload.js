@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('wfNative', {
   fetchImage: url => ipcRenderer.invoke('fetch-image', String(url)),
   fetchPage: url => ipcRenderer.invoke('fetch-page', String(url)),
   fetchPdf: url => ipcRenderer.invoke('fetch-pdf', String(url)),
+  aiPost: (url, key, body) => ipcRenderer.invoke('ai-post', String(url), String(key), String(body)),
   fritzingList: () => ipcRenderer.invoke('fritzing-list'),
   fritzingLoad: id => ipcRenderer.invoke('fritzing-load', Number(id)),
   version: () => ipcRenderer.invoke('app-version'),

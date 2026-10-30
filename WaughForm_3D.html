@@ -45,6 +45,14 @@ html,body{margin:0;height:100%;font:13px/1.3 "Segoe UI",system-ui,sans-serif;col
 #askBox .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 #askBox button{font:inherit;padding:5px 14px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer}
 #askBox button[data-ok]{background:var(--accent);color:#fff;border-color:var(--accent)}
+#askBox.keyBox{width:min(540px,calc(100% - 32px));font-size:13.5px;line-height:1.45}
+#askBox.keyBox .kHead{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+#askBox.keyBox .kHead select{font:inherit;padding:3px 6px}
+#askBox.keyBox ol{margin:8px 0 10px 20px;padding:0}
+#askBox.keyBox .kOpen{justify-content:flex-start;margin:0 0 8px}
+#askBox.keyBox .kTest{min-height:20px;margin-top:6px}
+#askBox.keyBox .ok{color:#1a8a3a}#askBox.keyBox .bad{color:#c0201a}
+#askBox.keyBox button:disabled{opacity:.5;cursor:default}
 #checkPanel{width:330px;line-height:1.45}
 #checkPanel h3{margin:0 0 6px}
 #checkPanel .item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee}
@@ -4141,6 +4149,10 @@ markDirty();
 .wrCode{width:100%;height:190px;font:12px Consolas,monospace;padding:6px;border:1px solid var(--line);border-radius:4px;resize:vertical;user-select:text}
 .plPins{width:100%;border-collapse:collapse;font-size:12px}
 .plPins td{padding:1px 3px;border-bottom:1px solid #eee}
+.plPins tr.hd td{color:var(--muted);font-size:11px;border-bottom:1px solid #ddd}
+.plPins tr.on td{background:#ffe9ea}
+.plPins input[type=number]{padding:1px 2px}
+#plXY{position:absolute;left:8px;bottom:8px;z-index:3;background:#fffe;border:1px solid var(--line);border-radius:4px;padding:2px 7px;font-size:12px;color:#333;pointer-events:none;display:none}
 .plPins input{width:100%;font:inherit;padding:1px 3px}
 .plPins select{width:100%;font:inherit}
 .plPics{padding:5px 10px;border-bottom:1px solid #eee;background:#f5f9ff;font-size:12.5px;position:relative}
@@ -4155,6 +4167,9 @@ markDirty();
 #plRef img{width:100%;display:block}
 #plRef .pdf{font:700 22px "Segoe UI",sans-serif;color:#b03a3a;text-align:center;padding:10px}
 #plRef span{display:block;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+#plBigBtn{position:absolute;right:8px;bottom:8px;z-index:3;font-size:12px;padding:3px 9px;box-shadow:0 1px 4px #0002}
+#plBack.plBig .plBody,#plBack.plBig .plEdit{grid-template-columns:minmax(0,1fr)}
+#plBack.plBig .plList,#plBack.plBig .plForm{display:none}
 </style>
 <div id="ewBack" class="ewBack"><div class="ewWin">
   <div class="ewHead"><h2>Enclosure Wizard</h2><span class="ewNote">Pick your parts and a style, check the layout, then Generate. Everything is worked out on this computer.</span>
@@ -4226,7 +4241,7 @@ const typeOf=p=>TYPES[p.type]||TYPES.other;
 // Feature types. x,y are the centre (mm, from the part's bottom-left corner as seen in its photo);
 // edge features sit on an edge (side) at a position along it (u).
 const FEAT={
-  port:{name:'Port / socket',def:{kind:'USB-C',side:'xmin',u:5,zc:1.6,pw:12.5,ph:7},tip:'An opening in the wall for a plug (USB, power, jack). The part is placed with this edge against a wall.'},
+  port:{name:'Port / socket',def:{kind:'USB-C',side:'xmin',u:5,zc:1.6,pw:12.5,ph:7},tip:'An opening for a plug (USB, power, jack). Usually in the wall (the part is placed with this edge against it); set "Opens through" to the lid or the floor for a socket that points up or down.'},
   switch:{name:'Switch lever',def:{side:'ymin',u:4,zc:1.8,pw:6.5,ph:3.2},tip:'A slot in the wall for a switch lever. The part is placed with this edge against a wall.'},
   antenna:{name:'Antenna',def:{side:'xmax',u:5,len:6,width:16},tip:'Kept 10 mm clear of other parts and away from batteries and speaker magnets.'},
   wire:{name:'Cable exit',def:{side:'xmax',u:5,dia:4},tip:'A notch in the nearest wall for a cable that leaves the box.'},
@@ -4238,13 +4253,25 @@ const FEAT={
   led:{name:'LED',def:{x:5,y:5,dia:3},tip:'Gets a small light hole in the lid above it.'},
   header:{name:'Pin header row',def:{x:10,y:2,fw:20,fd:2.54,dir:'down'},tip:'Pins are kept clear of the rails. Prototype style adds room for Dupont plugs above or below.'},
   heat:{name:'Gets hot',def:{x:5,y:5,fw:10,fd:10},tip:'Gets vent slots in the lid above it.'},
-  window:{name:'Display window',def:{x:10,y:10,fw:20,fd:12},tip:'Gets a window cut in the lid.'}
+  window:{name:'Display window',def:{x:10,y:10,fw:20,fd:12},tip:'Gets a window cut in the lid.'},
+  cutout:{name:'Cut-out',def:{thru:'lid',shape:'round',x:5,y:5,cw:6,ch:6},tip:'A hole of any size, round or rectangular, through the lid, the floor or a side wall: for a jumper, reset button, SD card or anything else you need to reach or see.'}
 };
 const EDGE_FEATS=['port','switch','antenna','wire'],RECT_FEATS=['cone','header','heat','window'];
-const FFIELDS={port:['kind','side','u','zc','pw','ph'],switch:['side','u','zc','pw','ph'],antenna:['side','u','len','width'],wire:['side','u','dia'],
+const FFIELDS={port:['kind','thru','side','u','zc','pw','ph'],switch:['side','u','zc','pw','ph'],antenna:['side','u','len','width'],wire:['side','u','dia'],
   mic:['x','y','dia'],cone:['x','y','cw','ch'],opening:['x','y','dia'],hole:['x','y','dia'],button:['x','y','dia'],led:['x','y','dia'],
-  header:['x','y','fw','fd','dir'],heat:['x','y','fw','fd'],window:['x','y','fw','fd']};
-const FLABEL={x:'X',y:'Y',dia:'Ø',cw:'Width',ch:'Height',fw:'Length',fd:'Width',u:'Along edge',zc:'Centre above PCB',pw:'Cut-out W',ph:'Cut-out H',len:'Depth',width:'Width',side:'Edge',dir:'Pins point',kind:'Type'};
+  header:['x','y','fw','fd','dir'],heat:['x','y','fw','fd'],window:['x','y','fw','fd'],cutout:['thru','shape','x','y','cw','ch']};
+const THRU={wall:'side wall',lid:'lid',floor:'floor'};
+// Sits on an edge and opens through that side wall (side, u). A port set to open through the lid or the floor, and a
+// cut-out through the lid or floor, sit at x,y on the part instead, like a button.
+const isEdge=f=>(EDGE_FEATS.includes(f.t)&&!(f.t==='port'&&f.thru&&f.thru!=='wall'))||(f.t==='cutout'&&f.thru==='wall');
+// The boxes the editor shows for a feature (ports and cut-outs change with where they open).
+function fieldsOf(f){
+  const wall=isEdge(f);
+  if(f.t==='port')return wall?['kind','thru','side','u','zc','pw','ph']:['kind','thru','x','y','pw','ph'];
+  if(f.t==='cutout')return ['thru','shape',...(wall?['side','u','zc']:['x','y']),'cw',...(f.shape==='rect'?['ch']:[])];
+  return FFIELDS[f.t];
+}
+const FLABEL={x:'X',y:'Y',dia:'Ø',cw:'Width',ch:'Height',fw:'Length',fd:'Width',u:'Along edge',zc:'Centre above PCB',pw:'Cut-out W',ph:'Cut-out H',len:'Depth',width:'Width',side:'Edge',dir:'Pins point',kind:'Type',thru:'Opens through',shape:'Shape'};
 // Port cut-out sizes: big enough for the plug's moulded body to reach the socket.
 const PORT_KINDS={'USB-C':[12.5,7],'2× USB-C':[25,8],'Micro-USB':[11,8],'Mini-USB':[11,8.5],'USB-A':[16,9],'DC barrel':[10,10],'3.5 mm jack':[7,7],'microSD':[14,3.5],'JST / wires':[7,5],'Custom':null};
 const ROUND_KINDS=new Set(['DC barrel','3.5 mm jack']);
@@ -4376,7 +4403,7 @@ function prep(inst,st){
   const up=F.some(f=>f.t==='header'&&f.dir==='up'),down=F.some(f=>f.t==='header'&&f.dir==='down');
   o.zb=o.pcb>0?Math.max(o.below,2)+(down?st.headDown:0):o.below;
   o.top=o.zb+o.pcb+o.h+(up?st.headUp:0);
-  o.portSides=[...new Set(F.filter(f=>f.t==='port'||f.t==='switch').map(f=>f.side))];
+  o.portSides=[...new Set(F.filter(f=>(f.t==='port'||f.t==='switch'||f.t==='cutout')&&isEdge(f)).map(f=>f.side))];
   o.holes=F.filter(f=>f.t==='hole');
   o.ant=F.filter(f=>f.t==='antenna');
   // Room around the part for whatever holds it: corner clips for blocks, end stops for boards on rails.
@@ -4662,9 +4689,10 @@ function report(L){
       else ok(nm+': against the '+SIDE_NAME[it.wall].toLowerCase()+' wall');
       continue;
     }
-    for(const f of (p.features||[]).filter(f=>f.t==='port'||f.t==='switch')){
+    for(const f of (p.features||[]).filter(f=>(f.t==='port'||f.t==='cutout')&&!isEdge(f)))ok(nm+': '+esc(f.t==='cutout'?(f.shape==='rect'?'rectangular':'round')+' cut-out':(f.kind||'port'))+' opens through the '+THRU[f.thru]);
+    for(const f of (p.features||[]).filter(f=>(f.t==='port'||f.t==='switch'||f.t==='cutout')&&isEdge(f))){
       const s=rotSide(f.side,it.rot),b=it.b,gap={xmin:b.x0,xmax:L.W-b.x1,ymin:b.y0,ymax:L.D-b.y1}[s];
-      (gap<=PORT_GAP+0.6?ok:warn)(nm+': '+esc(f.t==='switch'?'switch lever':(f.kind||'port'))+(gap<=PORT_GAP+0.6?' opens through the '+SIDE_NAME[s].toLowerCase()+' wall':' is '+fx(gap)+' mm from the wall, too far for a plug: drag it against the wall'));
+      (gap<=PORT_GAP+0.6?ok:warn)(nm+': '+esc(f.t==='switch'?'switch lever':f.t==='cutout'?'cut-out':(f.kind||'port'))+(gap<=PORT_GAP+0.6?' opens through the '+SIDE_NAME[s].toLowerCase()+' wall':' is '+fx(gap)+' mm from the wall, too far for a plug: drag it against the wall'));
     }
     if(it.ant.length&&!it.bad)ok(nm+': antenna has '+ANT_KEEP+' mm clear in front, away from batteries and the speaker');
     if(it.o.holes&&it.o.holes.length)ok(nm+': '+it.o.holes.length+' screw post'+(it.o.holes.length>1?'s':'')+(it.zb>2?' ('+fx(it.zb)+' mm tall)':''));
@@ -4715,6 +4743,9 @@ async function buildSolids(L){
     const adds=[],subs=[],lidAdds=[],lidSubs=[],cutsPerWall={xmin:[],xmax:[],ymin:[],ymax:[]};
     const lidHole=(x,y,r)=>lidSubs.push(cylZ(x,y,H-LIP-1,H+lt+1,r));
     const lidRect=(x0,y0,x1,y1)=>lidSubs.push(rbox(x0,y0,H-LIP-1,x1,y1,H+lt+1,0.6));
+    // through the floor: cut up to just under the part (top), so rails or posts under it don't block the hole
+    const floorHole=(x,y,r,top)=>subs.push(cylZ(x,y,-f-1,Math.max(0.3,top-0.2),r));
+    const floorRect=(x0,y0,x1,y1,top)=>subs.push(rbox(x0,y0,-f-1,x1,y1,Math.max(0.3,top-0.2),0.6));
     const vents=(x0,y0,x1,y1)=>{// slots across the longer side
       const along=x1-x0>=y1-y0,n=Math.max(1,Math.floor(((along?x1-x0:y1-y0)+1.5)/3.5));
       for(let i=0;i<n;i++){const c=(along?x0:y0)+((along?x1-x0:y1-y0)-(n-1)*3.5)/2+i*3.5;
@@ -4824,13 +4855,20 @@ async function buildSolids(L){
         }
       }
       for(const ft of F){
-        if(ft.t==='port'||ft.t==='switch'){
+        if((ft.t==='port'||ft.t==='switch'||ft.t==='cutout')&&isEdge(ft)){
           const s=rotSide(ft.side,it.rot);
           const lp=ft.side==='xmin'?[0,ft.u]:ft.side==='xmax'?[o.w,ft.u]:ft.side==='ymin'?[ft.u,0]:[ft.u,o.d];
-          const [x,y]=pt(lp[0],lp[1]),u=s[0]==='y'?x:y,zc=zb+o.pcb+ft.zc,round=ROUND_KINDS.has(ft.kind);
-          const pw=round?Math.max(ft.pw,ft.ph):ft.pw,ph=round?pw:ft.ph;
+          const cut=ft.t==='cutout',round=cut?ft.shape!=='rect':ROUND_KINDS.has(ft.kind);
+          const [x,y]=pt(lp[0],lp[1]),u=s[0]==='y'?x:y,zc=zb+o.pcb+ft.zc;
+          const pw=cut?ft.cw:round?Math.max(ft.pw,ft.ph):ft.pw,ph=round?pw:cut?ft.ch:ft.ph;
           subs.push(wallCut(s,u-pw/2,u+pw/2,zc-ph/2,zc+ph/2,round?pw/2:Math.min(1.5,ph/2)));
           cutsPerWall[s].push([u-pw/2,u+pw/2]);
+        }else if(ft.t==='port'||ft.t==='cutout'){// a socket pointing up or down, or a cut-out, through the lid or the floor
+          const cut=ft.t==='cutout',round=cut?ft.shape!=='rect':ROUND_KINDS.has(ft.kind);
+          const cw=cut?ft.cw:round?Math.max(ft.pw,ft.ph):ft.pw,ch=round?cw:cut?ft.ch:ft.ph,g=cut?0.2:0;// (port sizes already allow for the plug)
+          const fl=ft.thru==='floor';
+          if(round){const [x,y]=pt(ft.x,ft.y);fl?floorHole(x,y,cw/2+g,zb):lidHole(x,y,cw/2+g);}
+          else{const r=rectW(ft.x-cw/2-g,ft.y-ch/2-g,ft.x+cw/2+g,ft.y+ch/2+g);fl?floorRect(r[0],r[1],r[2],r[3],zb):lidRect(r[0],r[1],r[2],r[3]);}
         }else if(ft.t==='wire'){
           const s=rotSide(ft.side,it.rot),lp=ft.side==='xmin'?[0,ft.u]:ft.side==='xmax'?[o.w,ft.u]:ft.side==='ymin'?[ft.u,0]:[ft.u,o.d];
           const [x,y]=pt(lp[0],lp[1]),u=s[0]==='y'?x:y,hw=ft.dia/2+0.5;
@@ -5001,7 +5039,7 @@ function renderSide(){
   const rows=wiz.items.map((it,i)=>{
     const p=partById(it.pid);
     if(!p)return `<div class="ewPart"><div class="nm"><span class="bad">Missing part (deleted from the library)</span><button class="x" data-del="${i}">✕</button></div></div>`;
-    const hasPort=(p.features||[]).some(f=>f.t==='port'||f.t==='switch'),wallM=(it.mount==='auto'?(p.mount||typeOf(p).mount):it.mount)==='wall';
+    const hasPort=(p.features||[]).some(f=>(f.t==='port'||f.t==='switch'||f.t==='cutout')&&isEdge(f)),wallM=(it.mount==='auto'?(p.mount||typeOf(p).mount):it.mount)==='wall';
     const wallSel=hasPort||wallM?`<label>${wallM?'Wall':'Port faces'} <select data-k="wall" data-i="${i}">${['auto','xmin','xmax','ymin','ymax'].map(v=>`<option value="${v}"${it.wall===v?' selected':''}>${v==='auto'?'Auto':SIDE_NAME[v]}</option>`).join('')}</select></label>`:'';
     return `<div class="ewPart"><div class="nm"><span title="${esc(p.name)}">${esc(p.name)}</span><label title="How many">× <input type="number" min="1" max="10" step="1" data-k="qty" data-i="${i}" value="${esc(it.qty||1)}"></label><button class="x" data-del="${i}" title="Remove from the box">✕</button></div>
 <div class="ewRow"><label>Mount <select data-k="mount" data-i="${i}"><option value="auto"${it.mount==='auto'?' selected':''}>Auto (${(p.mount||typeOf(p).mount)==='wall'?'wall':'floor'})</option><option value="floor"${it.mount==='floor'?' selected':''}>Floor</option><option value="wall"${it.mount==='wall'?' selected':''}>Against a wall</option></select></label>${wallSel}</div></div>`;
@@ -5109,10 +5147,17 @@ function drawLayout(){
       for(const f of p.features||[]){
         if(f.t==='hole'||f.t==='button'||f.t==='led'||f.t==='mic'||f.t==='opening'){const m=floorXY(it,f.x,f.y);c.beginPath();c.arc(X(m[0]),Y(m[1]),Math.max(1,f.dia/2)*s,0,Math.PI*2);c.strokeStyle=f.t==='hole'?'#333':'#1e5af0';c.stroke();}
         if(f.t==='header'){const a=floorXY(it,f.x-f.fw/2,f.y-f.fd/2),e=floorXY(it,f.x+f.fw/2,f.y+f.fd/2);c.setLineDash([2,2]);c.strokeStyle='#555';c.strokeRect(X(Math.min(a[0],e[0])),Y(Math.max(a[1],e[1])),Math.abs(e[0]-a[0])*s,Math.abs(e[1]-a[1])*s);c.setLineDash([]);}
-        if(f.t==='port'||f.t==='switch'){
+        if((f.t==='port'||f.t==='cutout')&&!isEdge(f)){// lid or floor opening: drawn where it is (dashed for the floor)
+          const round=f.t==='cutout'?f.shape!=='rect':ROUND_KINDS.has(f.kind),cw=f.t==='cutout'?f.cw:round?Math.max(f.pw,f.ph):f.pw,ch=round?cw:f.t==='cutout'?f.ch:f.ph;
+          const a=floorXY(it,f.x-cw/2,f.y-ch/2),e=floorXY(it,f.x+cw/2,f.y+ch/2),m=floorXY(it,f.x,f.y);
+          c.strokeStyle='#c2185b';c.lineWidth=1.5;if(f.thru==='floor')c.setLineDash([3,2]);c.beginPath();
+          if(round)c.arc(X(m[0]),Y(m[1]),cw/2*s,0,Math.PI*2);else c.rect(X(Math.min(a[0],e[0])),Y(Math.max(a[1],e[1])),Math.abs(e[0]-a[0])*s,Math.abs(e[1]-a[1])*s);
+          c.stroke();c.setLineDash([]);c.lineWidth=1;
+        }
+        if((f.t==='port'||f.t==='switch'||f.t==='cutout')&&isEdge(f)){
           const sd=rotSide(f.side,it.rot),lp=f.side==='xmin'?[0,f.u]:f.side==='xmax'?[o.w,f.u]:f.side==='ymin'?[f.u,0]:[f.u,o.d],m=floorXY(it,lp[0],lp[1]);
           c.strokeStyle='#e0141e';c.lineWidth=Math.max(3,t*s*0.8);c.beginPath();
-          const half=(ROUND_KINDS.has(f.kind)?Math.max(f.pw,f.ph):f.pw)/2;
+          const half=(f.t==='cutout'?f.cw:ROUND_KINDS.has(f.kind)?Math.max(f.pw,f.ph):f.pw)/2;
           if(sd==='xmin'||sd==='xmax'){const x=sd==='xmin'?-t/2:W+t/2;c.moveTo(X(x),Y(m[1]-half));c.lineTo(X(x),Y(m[1]+half));}
           else{const y=sd==='ymin'?-t/2:D+t/2;c.moveTo(X(m[0]-half),Y(y));c.lineTo(X(m[0]+half),Y(y));}
           c.stroke();c.lineWidth=1;
@@ -5189,7 +5234,38 @@ ewCv.addEventListener('keydown',e=>{if(e.key==='r'||e.key==='R'){e.preventDefaul
 new ResizeObserver(()=>{if(ewBack.style.display==='grid')drawLayout();}).observe($('ewCanvas').parentElement);
 
 // ---------------------------------------------------------------- parts library window
-let ed=null,edDirty=false,edSel=-1,edMode='select',photo=null,rawImg=null,clicks=[],sideRef='w';
+let ed=null,edDirty=false,edSel=-1,edPin=-1,edMode='select',photo=null,rawImg=null,clicks=[],sideRef='w',plBig=false;
+// Where positions are measured from, for the numbers shown and typed in the part editor only: parts are always
+// stored from the bottom-left corner (x to the right, y up), so changing this never changes a part.
+const ORIGINS={tl:'Top-left corner',bl:'Bottom-left corner',c:'Centre'};
+const orig=()=>ORIGINS[WF.store.get('partOrigin')]?WF.store.get('partOrigin'):'tl';
+const isPos=k=>k==='x'||k==='y'||k==='u';
+// k: 'x', 'y' or 'u' (along an edge: up the left/right edges, across the top/bottom ones)
+function toShow(k,v,side){
+  const o=orig(),vert=side==='xmin'||side==='xmax';
+  if(k==='x'||(k==='u'&&!vert))return o==='c'?v-ed.w/2:v;
+  if(k==='y'||(k==='u'&&vert))return o==='tl'?ed.d-v:o==='c'?v-ed.d/2:v;
+  return v;
+}
+function fromShow(k,v,side){
+  const o=orig(),vert=side==='xmin'||side==='xmax';
+  if(k==='x'||(k==='u'&&!vert))return o==='c'?v+ed.w/2:v;
+  if(k==='y'||(k==='u'&&vert))return o==='tl'?ed.d-v:o==='c'?v+ed.d/2:v;
+  return v;
+}
+function posLabel(k,side){
+  const o=orig(),vert=side==='xmin'||side==='xmax',down=o==='tl'?'↓':o==='c'?'↕':'↑',across=o==='c'?'↔':'→';
+  return k==='x'?'X '+across:k==='y'?'Y '+down:k==='u'?FLABEL.u+' '+(vert?down:across):FLABEL[k];
+}
+const posTip=k=>k==='x'?(orig()==='c'?'mm right of the centre (minus = left)':'mm from the left edge'):(orig()==='tl'?'mm down from the top edge':orig()==='c'?'mm above the centre (minus = below)':'mm up from the bottom edge');
+// Moved things land on 0.5 mm steps, counted from the chosen corner (fine: 0.1 mm steps).
+const snapTo=(k,v,side,fine)=>{const s=toShow(k,v,side);return +fromShow(k,fine?Math.round(s*10)/10:snap(s),side).toFixed(2);};
+// Bigger picture: the part picture fills the Parts Library window, so a small board's pins and their names can be read.
+function setBig(on){
+  plBig=on;plBack.classList.toggle('plBig',on);
+  const b=$('plBigBtn');if(b)b.textContent=on?'✕ Smaller picture':'⤢ Bigger picture';
+  drawEd();
+}
 const imgCache=new Map();
 function imgOf(src,cb){
   if(!src)return null;let im=imgCache.get(src);
@@ -5202,12 +5278,12 @@ function openLibrary(id){
 }
 function closeLibrary(){
   if(edDirty&&!confirm('Close without saving the changes to "'+ed.name+'"?'))return;
-  edDirty=false;plBack.style.display='none';
+  edDirty=false;plBack.style.display='none';setBig(false);
 }
 function selectPart(id,force){
   if(!force&&edDirty&&!confirm('Discard the changes to "'+ed.name+'"?'))return;
   const p=partById(id);if(!p)return;
-  ed=tidyPart(clone(p));if(!ed.pins||!ed.pins.length)ed.pins=clone(pinsOf(p));edDirty=false;edSel=-1;edMode='select';clicks=[];rawImg=null;clearRef();
+  ed=tidyPart(clone(p));if(!ed.pins||!ed.pins.length)ed.pins=clone(pinsOf(p));edDirty=false;edSel=-1;edPin=-1;edMode='select';clicks=[];rawImg=null;clearRef();
   renderList();renderEditor();
 }
 function thumb(cv,p){
@@ -5234,8 +5310,9 @@ function renderEditor(){
 <div class="ewRow"><button id="plLook" class="primary" title="Type the part number: the free Google Gemini AI searches the web, reads the datasheet and fills in this part as a draft"${aiBusy?' disabled':''}>${aiBusy?'Looking up… please wait':'Look up online…'}</button><button id="plRead" title="Let the AI read a dimension drawing (picture or PDF) you have saved"${aiBusy?' disabled':''}>Read a drawing…</button></div>
 <div class="ewRow"><button id="plFind" title="Open a web search for the part's documentation in your browser, to look yourself">Search the web myself…</button><button id="plFindImg" title="Open Google Images for the part's dimension drawings: copy one, then press Ctrl+V here">Search images myself…</button></div>
 <div class="ewRow"><button id="plFindFz" title="Search the web for a ready-made part file (.fzpz): it brings the pins, the board size and a picture all at once">Search for a part file (.fzpz)…</button></div>
-<div class="ewRow"><button id="plKey">${aiProv()==='claude'?(aiKey()?'Change Claude key…':'Set up Claude key…'):(aiKey()?'Change AI key…':'Set up free AI key…')}</button></div>
-${aiProv()==='claude'?'<div class="ewNote">Claude is paid per use from your Anthropic credit: roughly US$0.10–0.40 per web look-up, a few cents to read a drawing (an estimate; it depends how much it reads).</div>':''}
+<div class="ewRow"><button id="plKey">${keyLabel()}</button></div>
+${aiProv()==='claude'?'<div class="ewNote">Claude is paid per use from your Anthropic credit: roughly US$0.10–0.40 per web look-up, a few cents to read a drawing (an estimate; it depends how much it reads).</div>':
+  aiProv()==='nvidia'?'<div class="ewNote">NVIDIA is free but can\'t search the web: <b>Look up online</b> uses what it already knows, so check every size. It reads pictures of drawings (not PDFs) and works in the desktop app only.</div>':''}
 <div class="ewNote"><b>Look up online</b>: type the part number and the AI finds the sizes and fills them in. Or save a dimension drawing and use <b>Read a drawing</b> (or drag it onto the picture, or Ctrl+V). Always check the draft before saving.</div></div>
 <label class="f"><span>Name</span><input type="text" data-p="name" value="${p.name==='New part'?'':esc(p.name)}" placeholder="New part: type its name"></label>
 <label class="f"><span>Type</span><select data-p="type">${opt(Object.fromEntries(Object.entries(TYPES).map(([k,v])=>[k,v.name])),p.type)}</select></label>
@@ -5252,33 +5329,38 @@ ${p.shape==='round'?'':`<label class="f"><span>Width (bottom → top)</span><inp
 <h4>Photo</h4>
 <div class="ewRow"><button id="plTop">${p.photo?'Replace top photo…':'Top photo…'}</button>${p.photo?'<button id="plTurn" title="Turn the photo upside down, if it came out the wrong way round">Turn photo 180°</button><button id="plNoPhoto">Remove photo</button>':''}</div>
 <div class="ewRow"><button id="plSide">Side photo for heights…</button><label>shows the <select id="plSideRef"><option value="w"${sideRef==='w'?' selected':''}>long side</option><option value="d"${sideRef==='d'?' selected':''}>short side</option></select></label></div><h4>Features <span class="ewNote">(${p.features.length})</span></h4>
+<label class="f" title="Where the X and Y numbers of features and pins are measured from (the red 0,0 mark on the picture). It only changes the numbers shown, not the part."><span>Measure from</span><select id="plOrigin">${opt(ORIGINS,orig())}</select></label>
 <div id="plFeats"></div>
 <div class="ewRow" style="margin-top:10px"><button id="plTypical" title="Add the features this type of part usually has">Add typical features</button></div>
 <h4>Pins <span class="ewNote">(${(p.pins||[]).length}) for the wiring diagram</span></h4>
-${(p.pins||[]).length?`<table class="plPins">${p.pins.map((q,i)=>`<tr><td style="width:38%"><input data-pn="${i}" value="${esc(q.n)}"></td><td><select data-pr="${i}">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${q.r===k?' selected':''}>${esc(v)}</option>`).join('')}</select></td><td style="width:22px"><button class="x" data-pdel="${i}" title="Delete this pin">✕</button></td></tr>`).join('')}</table>`:'<div class="ewNote">No pins yet. Click Import pins…, or add them here.</div>'}
+${(p.pins||[]).length?`<table class="plPins"><tr class="hd"><td>Name</td><td title="${esc(posTip('x'))}">${posLabel('x')}</td><td title="${esc(posTip('y'))}">${posLabel('y')}</td><td>Role</td><td></td></tr>${p.pins.map((q,i)=>`<tr data-prow="${i}"${i===edPin?' class="on"':''}><td style="width:30%"><input data-pn="${i}" value="${esc(q.n)}"></td><td style="width:58px"><input type="number" step="0.1" data-px="${i}" value="${q.x===undefined?'':fx(toShow('x',q.x))}" placeholder="–"></td><td style="width:58px"><input type="number" step="0.1" data-py="${i}" value="${q.y===undefined?'':fx(toShow('y',q.y))}" placeholder="–"></td><td><select data-pr="${i}">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${q.r===k?' selected':''}>${esc(v)}</option>`).join('')}</select></td><td style="width:22px"><button class="x" data-pdel="${i}" title="Delete this pin">✕</button></td></tr>`).join('')}</table>`:'<div class="ewNote">No pins yet. Click Import pins…, or add them here.</div>'}
 <div class="ewRow"><button id="plPinAdd">+ Pin</button><button id="plFz" title="Take this part's pins (names and positions) and picture from a parts library on this computer, or from a part file (.fzpz)">Import pins…</button></div>
 <div class="ewRow plActions"><button id="plSave" class="primary">Save part</button><button id="plDup">Duplicate</button>
 ${isB?(overridden?'<button id="plReset">Reset to original</button>':''):'<button id="plDel">Delete</button>'}<button id="plUse" title="Add this part to the Enclosure Wizard">Use in enclosure</button></div>
 </div>
 <div class="plCanvasCol"><div class="plPal" id="plPal"><button data-mode="select" class="${edMode==='select'?'on':''}">Select / move</button>${Object.entries(FEAT).map(([k,v])=>`<button data-mode="add:${k}" class="${edMode==='add:'+k?'on':''}" title="${esc(v.tip)}">+ ${esc(v.name)}</button>`).join('')}</div>
 <div class="plHint" id="plHint"></div>${picsHtml()}
-<div class="ewCanvasWrap"><canvas id="plCanvas" tabindex="0"></canvas>${refDraw?`<div id="plRef" class="${refDraw.big?'big':''}" title="Click to make bigger or smaller">${refDraw.url?`<img src="${refDraw.url}" alt="">`:'<div class="pdf">PDF</div>'}<span>${esc(refDraw.name)}</span></div>`:''}</div></div>`;
+<div class="ewCanvasWrap"><canvas id="plCanvas" tabindex="0"></canvas><div id="plXY"></div><button id="plBigBtn" title="Show the picture across the whole window, to read small pins (or double-click the picture). Esc goes back.">${plBig?'✕ Smaller picture':'⤢ Bigger picture'}</button>${refDraw?`<div id="plRef" class="${refDraw.big?'big':''}" title="Click to make bigger or smaller">${refDraw.url?`<img src="${refDraw.url}" alt="">`:'<div class="pdf">PDF</div>'}<span>${esc(refDraw.name)}</span></div>`:''}</div></div>`;
   renderFeats();setHint();drawEd();
 }
 function renderFeats(){
   const box=$('plFeats');if(!box)return;
   box.innerHTML=ed.features.map((f,i)=>{
-    const fields=FFIELDS[f.t].map(k=>{
+    const fields=fieldsOf(f).map(k=>{
+      if(k==='thru')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="thru">${Object.entries(THRU).map(([v,n])=>`<option value="${v}"${(f.thru||'wall')===v?' selected':''}>${n}</option>`).join('')}</select></label>`;
+      if(k==='shape')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="shape"><option value="round"${f.shape!=='rect'?' selected':''}>round</option><option value="rect"${f.shape==='rect'?' selected':''}>rectangle</option></select></label>`;
+      if(f.t==='cutout'&&(k==='cw'||k==='ch'))return `<label>${k==='cw'?(f.shape==='rect'?(isEdge(f)?'Width':'Length'):'Ø'):(isEdge(f)?'Height':'Width')} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(f[k])}"></label>`;
       if(k==='side')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="side">${['xmin','xmax','ymin','ymax'].map(s=>`<option value="${s}"${f.side===s?' selected':''}>${EDGE_NAME[s]}</option>`).join('')}</select></label>`;
       if(k==='dir')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="dir"><option value="down"${f.dir==='down'?' selected':''}>down</option><option value="up"${f.dir==='up'?' selected':''}>up</option></select></label>`;
       if(k==='kind')return `<label>${FLABEL[k]} <select data-fi="${i}" data-fk="kind">${Object.keys(PORT_KINDS).map(s=>`<option${f.kind===s?' selected':''}>${esc(s)}</option>`).join('')}</select></label>`;
-      return `<label>${FLABEL[k]} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(f[k])}"></label>`;
+      return isPos(k)?`<label title="${esc(posTip(k==='u'?(f.side==='xmin'||f.side==='xmax'?'y':'x'):k))}">${posLabel(k,f.side)} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(toShow(k,f[k],f.side))}"></label>`
+        :`<label>${FLABEL[k]} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(f[k])}"></label>`;
     }).join('');
     return `<div class="plFeat${i===edSel?' on':''}" data-fsel="${i}"><div class="hd" data-fsel="${i}"><span data-fsel="${i}">${esc(FEAT[f.t].name)}</span><button class="x" data-fdel="${i}" title="Delete this feature">✕</button></div><div class="fl">${fields}</div></div>`;
   }).join('')||'<div class="ewNote">None yet. Pick a feature above the picture, then click or drag on the part. Ports, antennas and switches go on an edge.</div>';
 }
 const HINTS={
-  select:()=>ed.features.length?'Click a feature to select it, drag to move it. Pick a "+" button to add another.':'Pick a feature button above, then click or drag on the part to place it.',
+  select:()=>ed.features.length||(ed.pins||[]).some(q=>q.x!==undefined)?'Click a feature or a gold pin to select it, drag to move it (it snaps to 0.5 mm; hold Alt for 0.1 mm). Arrow keys nudge it 0.1 mm (Shift: 1 mm). Pick a "+" button to add a feature.':'Pick a feature button above, then click or drag on the part to place it.',
   corners:()=>ed.shape==='round'?`Click 3 points around the edge of the round board (${clicks.length}/3).`:`Click the 4 corners of the board in order: top-left, top-right, bottom-right, bottom-left (${clicks.length}/4). Take the photo from straight above if you can.`,
   side:()=>['Click the LEFT end of the board, at the bottom of the board','Click the RIGHT end of the board, at the bottom of the board','Click the TOP surface of the board','Click the TOP of the tallest part','Click the bottom tip of the pins underneath'][clicks.length]||''
 };
@@ -5294,8 +5376,14 @@ function markDirty(){edDirty=true;}
 $('plEdit').addEventListener('input',e=>{
   const el=e.target;
   if(el.dataset.p){const k=el.dataset.p;ed[k]=el.type==='number'?num(el.value,ed[k]):k==='name'?(el.value.trim()?el.value:'New part'):el.value;if(k==='w'&&ed.shape==='round')ed.d=ed.w;markDirty();drawEd();return;}
-  if(el.dataset.fk&&el.type==='number'){const f=ed.features[+el.dataset.fi];f[el.dataset.fk]=num(el.value,f[el.dataset.fk]);markDirty();drawEd();}
+  if(el.dataset.fk&&el.type==='number'){const f=ed.features[+el.dataset.fi],k=el.dataset.fk;
+    if(isPos(k)){const v=parseFloat(el.value);if(isFinite(v))f[k]=+fromShow(k,v,f.side).toFixed(2);}else f[k]=num(el.value,f[k]);
+    edSel=+el.dataset.fi;edPin=-1;markDirty();drawEd();}
   if(el.dataset.pn!==undefined){ed.pins[+el.dataset.pn].n=el.value;markDirty();drawEd();}
+  if(el.dataset.px!==undefined||el.dataset.py!==undefined){// a pin's position, typed
+    const k=el.dataset.px!==undefined?'x':'y',i=+(k==='x'?el.dataset.px:el.dataset.py),q=ed.pins[i],v=parseFloat(el.value);if(!isFinite(v))return;
+    if(q.x===undefined){q.x=+fromShow('x',0).toFixed(2);q.y=+fromShow('y',0).toFixed(2);}
+    q[k]=+fromShow(k,v).toFixed(2);edPin=i;edSel=-1;updPinRow(i,el);markDirty();drawEd();}
 });
 $('plEdit').addEventListener('change',e=>{
   const el=e.target;
@@ -5303,9 +5391,11 @@ $('plEdit').addEventListener('change',e=>{
   if(el.dataset.p==='type'){if(!edDirty||!ed.features.length)ed.mount=TYPES[ed.type].mount;renderEditor();return;}
   if(el.id==='plSideRef'){sideRef=el.value;return;}
   if(el.dataset.pr!==undefined){const q=ed.pins[+el.dataset.pr];q.r=el.value;if(q.r==='gpio'&&q.g===undefined){const m=q.n.match(/(\d+)/);if(m)q.g=+m[1];}markDirty();return;}
-  if(el.id==='plProv'){WF.store.set('aiProvider',el.value);renderEditor();if(!aiKey())WF.flash('Click "'+(el.value==='claude'?'Set up Claude key…':'Set up free AI key…')+'" to add the key for this AI',5000);return;}
+  if(el.id==='plProv'){WF.store.set('aiProvider',el.value);renderEditor();if(!aiKey())WF.flash('Click "'+keyLabel()+'" to add the key for this AI',5000);return;}
+  if(el.id==='plOrigin'){WF.store.set('partOrigin',el.value);const fm=document.querySelector('.plForm'),st=fm?fm.scrollTop:0;renderEditor();const f2=document.querySelector('.plForm');if(f2)f2.scrollTop=st;return;}
   if(el.dataset.fk&&el.tagName==='SELECT'){
-    const f=ed.features[+el.dataset.fi];f[el.dataset.fk]=el.value;
+    const f=ed.features[+el.dataset.fi];
+    if(el.dataset.fk==='thru')setThru(f,el.value);else f[el.dataset.fk]=el.value;
     if(el.dataset.fk==='kind'&&PORT_KINDS[el.value]){[f.pw,f.ph]=PORT_KINDS[el.value];}
     markDirty();renderFeats();drawEd();
   }
@@ -5320,7 +5410,7 @@ $('plEdit').addEventListener('click',async e=>{
   if(id==='plNoPhoto'){delete ed.photo;markDirty();renderEditor();return;}
   if(id==='plTurn'){turnPhoto();return;}
   if(id==='plTurn90'){turnPart(ed).then(()=>{markDirty();renderEditor();WF.flash('Part turned a quarter turn: its sizes, picture, features and pins all moved together. Click again to keep turning.',6000);});return;}
-  if(el.dataset.pdel!==undefined){ed.pins.splice(+el.dataset.pdel,1);markDirty();renderEditor();return;}
+  if(el.dataset.pdel!==undefined){ed.pins.splice(+el.dataset.pdel,1);edPin=-1;markDirty();renderEditor();return;}
   if(id==='plPinAdd'){(ed.pins=ed.pins||[]).push({n:'PIN '+(ed.pins.length+1),r:'sig'});markDirty();renderEditor();return;}
   if(id==='plFz'){fritzingImport();return;}
   if(id==='plFind'){findDrawings(false);return;}
@@ -5335,6 +5425,7 @@ $('plEdit').addEventListener('click',async e=>{
   if(el.dataset.picsX){aiPics=null;showPics();return;}
   if(id==='plAiReply'){WF.askText('This is exactly what Google sent back. To get help, take a screenshot of this box.\n\n'+aiLastReply.slice(0,2500),'');return;}
   if(el.closest&&el.closest('#plRef')){refDraw.big=!refDraw.big;$('plRef').classList.toggle('big',refDraw.big);return;}
+  if(id==='plBigBtn'){setBig(!plBig);return;}
   if(id==='plCancelPhoto'){edMode='select';clicks=[];rawImg=null;renderEditor();return;}
   if(id==='plUndoClick'){clicks.pop();setHint();drawEd();return;}
   if(id==='plNoPins'){finishSide(null);return;}
@@ -5436,41 +5527,108 @@ function drawEd(){
   c.save();c.translate(X(0)-10,Y(p.d/2));c.rotate(-Math.PI/2);c.fillText(fx(p.d)+' mm',0,0);c.restore();
   c.fillText('top edge',X(p.w/2),Y(p.d)-8);
   ed.features.forEach((f,i)=>{
-    const sel=i===edSel,col={port:'#e0141e',switch:'#e0141e',antenna:'#d99a00',wire:'#7a4f2a',mic:'#7a4fb5',cone:'#1e5af0',opening:'#0a8a5a',hole:'#222',button:'#0a7a6a',led:'#e04a00',header:'#555',heat:'#d0201a',window:'#1e5af0'}[f.t];
+    const sel=i===edSel,col={port:'#e0141e',switch:'#e0141e',antenna:'#d99a00',wire:'#7a4f2a',mic:'#7a4fb5',cone:'#1e5af0',opening:'#0a8a5a',hole:'#222',button:'#0a7a6a',led:'#e04a00',header:'#555',heat:'#d0201a',window:'#1e5af0',cutout:'#c2185b'}[f.t];
     c.save();c.strokeStyle=col;c.fillStyle=col+'33';c.lineWidth=sel?3:1.8;
-    const r=featRect(f);
+    const r=featRect(f),inLid=!isEdge(f)&&(f.t==='port'||f.t==='cutout');
+    if(inLid&&f.thru==='floor')c.setLineDash([5,3]);// floor openings dashed
     c.beginPath();
     if(['mic','hole','button','led','opening'].includes(f.t))c.arc(X(f.x),Y(f.y),Math.max(0.8,f.dia/2)*s,0,Math.PI*2);
+    else if(inLid&&(f.t==='cutout'?f.shape!=='rect':ROUND_KINDS.has(f.kind)))c.arc(X(f.x),Y(f.y),(r[2]-r[0])/2*s,0,Math.PI*2);
     else if(f.t==='cone')c.ellipse(X(f.x),Y(f.y),f.cw/2*s,f.ch/2*s,0,0,Math.PI*2);
     else c.rect(X(r[0]),Y(r[3]),(r[2]-r[0])*s,(r[3]-r[1])*s);
     if(f.t==='header')c.setLineDash([3,2]);
     c.fill();c.stroke();c.setLineDash([]);
     c.fillStyle=col;c.textAlign='left';c.font=(sel?'bold ':'')+'11px "Segoe UI",system-ui,sans-serif';
-    c.fillText(f.t==='port'?(f.kind||'Port'):FEAT[f.t].name,X(r[2])+4,Y(r[3])+10);
+    c.fillText((f.t==='port'?(f.kind||'Port'):FEAT[f.t].name)+(inLid?(f.thru==='floor'?' (floor)':' (lid)'):''),X(r[2])+4,Y(r[3])+10);
     c.restore();
   });
-  // pins (gold dots with their names), when their positions are known
-  c.font='10px "Segoe UI",system-ui,sans-serif';c.textAlign='center';
-  for(const q of ed.pins||[]){
-    if(q.x===undefined)continue;
-    c.beginPath();c.arc(X(q.x),Y(q.y),Math.max(1.8,s*0.5),0,Math.PI*2);c.fillStyle='#c9a227';c.fill();c.strokeStyle='#6b5500';c.lineWidth=1;c.stroke();
-    if(s>=5){c.fillStyle='#3a2f00';c.fillText(q.n.slice(0,8),X(q.x),Y(q.y)-Math.max(4,s*0.7));}
+  // pins (gold dots with their names), when their positions are known; the names grow with the picture and have a
+  // white edge so they can be read on a dark board or under a feature
+  c.font=Math.round(Math.min(16,Math.max(10,s*0.8)))+'px "Segoe UI",system-ui,sans-serif';c.textAlign='center';c.lineJoin='round';
+  (ed.pins||[]).forEach((q,i)=>{
+    if(q.x===undefined)return;
+    const r=Math.max(1.8,s*0.5);
+    c.beginPath();c.arc(X(q.x),Y(q.y),r,0,Math.PI*2);c.fillStyle='#c9a227';c.fill();c.strokeStyle='#6b5500';c.lineWidth=1;c.stroke();
+    if(i===edPin){c.beginPath();c.arc(X(q.x),Y(q.y),r+4,0,Math.PI*2);c.strokeStyle='#e0141e';c.lineWidth=2.5;c.stroke();}
+    if(s>=5){const t=q.n.slice(0,8),ty=Y(q.y)-Math.max(4,s*0.7);c.strokeStyle='#fff';c.lineWidth=3;c.strokeText(t,X(q.x),ty);c.fillStyle='#3a2f00';c.fillText(t,X(q.x),ty);}
+  });
+  // where the numbers are measured from (red 0,0), and the selected feature's or pin's distances from there
+  const o=orig(),O=[o==='c'?p.w/2:0,o==='tl'?p.d:o==='c'?p.d/2:0];
+  c.save();c.strokeStyle=c.fillStyle='#e0141e';c.lineWidth=2;c.beginPath();
+  c.moveTo(X(O[0])-8,Y(O[1]));c.lineTo(X(O[0])+8,Y(O[1]));c.moveTo(X(O[0]),Y(O[1])-8);c.lineTo(X(O[0]),Y(O[1])+8);c.stroke();
+  c.font='bold 11px "Segoe UI",system-ui,sans-serif';c.textAlign='right';c.fillText('0,0',X(O[0])-4,Y(O[1])+(o==='tl'?-4:13));c.restore();
+  const pt=edPin>=0&&ed.pins[edPin]&&ed.pins[edPin].x!==undefined?ed.pins[edPin]:edSel>=0&&ed.features[edSel]?ptOf(ed.features[edSel]):null;
+  if(pt){
+    c.save();c.strokeStyle=c.fillStyle='#e0141e';c.lineWidth=1.2;c.setLineDash([5,4]);c.beginPath();
+    c.moveTo(X(O[0]),Y(pt.y));c.lineTo(X(pt.x),Y(pt.y));c.moveTo(X(pt.x),Y(O[1]));c.lineTo(X(pt.x),Y(pt.y));c.stroke();c.setLineDash([]);
+    c.font='bold 12px "Segoe UI",system-ui,sans-serif';c.lineJoin='round';
+    const lab=(t,x,y)=>{c.strokeStyle='#fff';c.lineWidth=3;c.strokeText(t,x,y);c.fillText(t,x,y);};
+    if(Math.abs(pt.x-O[0])>0.05){c.textAlign='center';lab('X '+fx(toShow('x',pt.x))+' mm',(X(O[0])+X(pt.x))/2,Y(pt.y)-5);}
+    if(Math.abs(pt.y-O[1])>0.05){c.textAlign='left';lab('Y '+fx(toShow('y',pt.y))+' mm',X(pt.x)+5,(Y(O[1])+Y(pt.y))/2+4);}
+    c.restore();
   }
+}
+// The point a feature's numbers refer to: its centre, or for an edge feature its place on that edge.
+function ptOf(f){
+  if(!isEdge(f))return {x:f.x,y:f.y};
+  if(f.side==='xmin'||f.side==='xmax')return {x:f.side==='xmin'?0:ed.w,y:f.u};
+  return {x:f.u,y:f.side==='ymin'?0:ed.d};
+}
+// Moving a port or cut-out between a side wall and the lid or floor: it starts where it was (just inside the
+// board for the lid or floor; on the nearest edge for a wall).
+function setThru(f,v){
+  const p=ptOf(f),was=isEdge(f);f.thru=v;
+  if(was&&!isEdge(f)){f.x=r1(Math.min(ed.w-2,Math.max(2,p.x)));f.y=r1(Math.min(ed.d-2,Math.max(2,p.y)));}
+  else if(!was&&isEdge(f)){
+    const d={xmin:p.x,xmax:ed.w-p.x,ymin:p.y,ymax:ed.d-p.y};f.side=Object.keys(d).sort((a,b)=>d[a]-d[b])[0];
+    f.u=r1(f.side[0]==='x'?p.y:p.x);if(f.zc===undefined)f.zc=2;
+  }
+}
+// After a pin moves, show its new numbers in the Pins list (except in the box being typed in).
+function updPinRow(i,typing){
+  document.querySelectorAll('.plPins tr[data-prow]').forEach(tr=>tr.classList.toggle('on',+tr.dataset.prow===edPin));
+  const q=ed.pins[i];if(!q)return;
+  for(const [k,a] of [['x','px'],['y','py']]){const el=document.querySelector(`[data-${a}="${i}"]`);if(el&&el!==typing)el.value=q[k]===undefined?'':fx(toShow(k,q[k]));}
+}
+// The nearest gold pin dot within reach of a point on the part, or -1.
+function pinAt(x,y){
+  let best=-1,bd=Math.max(1,7/pv.s);
+  (ed.pins||[]).forEach((q,i)=>{if(q.x===undefined)return;const d=Math.hypot(q.x-x,q.y-y);if(d<bd){bd=d;best=i;}});
+  return best;
+}
+// Live position under the pointer (or of what is being dragged), measured from the chosen corner.
+function showXY(x,y,what){
+  const el=$('plXY');if(!el)return;
+  if(x===null){el.style.display='none';return;}
+  el.style.display='block';
+  el.textContent=(what?what+': ':'')+'X '+fx(toShow('x',x))+'  Y '+fx(toShow('y',y))+' mm from the '+ORIGINS[orig()].toLowerCase();
 }
 // Feature area on the part (mm): [x0,y0,x1,y1]
 function featRect(f){
   const p=ed;
-  if(EDGE_FEATS.includes(f.t)){
-    const half=f.t==='antenna'?f.width/2:f.t==='wire'?f.dia/2:(ROUND_KINDS.has(f.kind)?Math.max(f.pw,f.ph):f.pw)/2;
+  if(isEdge(f)){
+    const half=f.t==='antenna'?f.width/2:f.t==='wire'?f.dia/2:f.t==='cutout'?f.cw/2:(ROUND_KINDS.has(f.kind)?Math.max(f.pw,f.ph):f.pw)/2;
     const dep=f.t==='antenna'?f.len:3;
     if(f.side==='xmin')return [0,f.u-half,dep,f.u+half];
     if(f.side==='xmax')return [p.w-dep,f.u-half,p.w,f.u+half];
     if(f.side==='ymin')return [f.u-half,0,f.u+half,dep];
     return [f.u-half,p.d-dep,f.u+half,p.d];
   }
-  const hw=f.t==='cone'?f.cw/2:f.fw!==undefined?f.fw/2:f.dia/2,hd=f.t==='cone'?f.ch/2:f.fd!==undefined?f.fd/2:f.dia/2;
+  let hw,hd;
+  if(f.t==='port'){const rd=ROUND_KINDS.has(f.kind);hw=(rd?Math.max(f.pw,f.ph):f.pw)/2;hd=rd?hw:f.ph/2;}// through the lid or floor
+  else if(f.t==='cutout'){hw=f.cw/2;hd=f.shape==='rect'?f.ch/2:hw;}
+  else{hw=f.t==='cone'?f.cw/2:f.fw!==undefined?f.fw/2:f.dia/2;hd=f.t==='cone'?f.ch/2:f.fd!==undefined?f.fd/2:f.dia/2;}
   return [f.x-hw,f.y-hd,f.x+hw,f.y+hd];
 }
+$('plEdit').addEventListener('dblclick',e=>{if(e.target.id==='plCanvas'&&edMode==='select')setBig(!plBig);});
+// The form scrolls with the wheel wherever the pointer is. Otherwise the Notes box or a number box that comes under
+// the pointer takes the wheel (a number box even changes its value) and the Pins list at the bottom can't be reached.
+$('plEdit').addEventListener('wheel',e=>{
+  const form=e.target.closest&&e.target.closest('.plForm'),t=e.target;
+  if(!form||e.ctrlKey)return;
+  if(t.tagName==='TEXTAREA'&&(e.deltaY<0?t.scrollTop>0:t.scrollTop+t.clientHeight<t.scrollHeight-1))return;// the notes still have text to scroll
+  e.preventDefault();form.scrollTop+=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*form.clientHeight:e.deltaY;
+},{passive:false});
 const pm=e=>{const r=$('plCanvas').getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
 const toPart=([sx,sy])=>[(sx-pv.ox)/pv.s,(pv.oy-sy)/pv.s];
 const r1=v=>Math.round(v*10)/10;
@@ -5495,26 +5653,51 @@ $('plEdit').addEventListener('pointerdown',e=>{
     if(RECT_FEATS.includes(t)){pdrag={new:true,f,x,y};cv.setPointerCapture(e.pointerId);}
     renderFeats();drawEd();return;
   }
-  // select / move
+  // select / move: a pin dot first (they sit on top), then a feature
+  const ph=pinAt(x,y);
+  if(ph>=0){const q=ed.pins[ph];edPin=ph;edSel=-1;renderFeats();updPinRow(ph);drawEd();pdrag={pin:q,x,y,fx:q.x,fy:q.y};cv.setPointerCapture(e.pointerId);return;}
+  edPin=-1;updPinRow(-1);
   let hit=-1;
   for(let i=ed.features.length-1;i>=0;i--){const r=featRect(ed.features[i]);if(x>=r[0]-1&&x<=r[2]+1&&y>=r[1]-1&&y<=r[3]+1){hit=i;break;}}
   edSel=hit;renderFeats();drawEd();
   if(hit>=0){const f=ed.features[hit];pdrag={f,x,y,fx:f.x,fy:f.y,fu:f.u};cv.setPointerCapture(e.pointerId);}
 });
+// Dragged features and pins snap to 0.5 mm steps from the chosen corner; hold Alt for 0.1 mm.
 $('plEdit').addEventListener('pointermove',e=>{
-  if(!pdrag||!pv||pv.raw)return;
-  const [x,y]=toPart(pm(e)),f=pdrag.f;
+  if(!pv||pv.raw||e.target.id!=='plCanvas'&&!pdrag)return;
+  const [x,y]=toPart(pm(e)),fine=e.altKey;
+  if(!pdrag){showXY(x>=-2&&x<=ed.w+2&&y>=-2&&y<=ed.d+2?x:null,y);return;}
+  if(pdrag.pin){const q=pdrag.pin;q.x=snapTo('x',pdrag.fx+x-pdrag.x,null,fine);q.y=snapTo('y',pdrag.fy+y-pdrag.y,null,fine);showXY(q.x,q.y,q.n);markDirty();drawEd();return;}
+  const f=pdrag.f;
   if(pdrag.new){// dragging out a rectangle feature
     const w=Math.abs(x-pdrag.x),h=Math.abs(y-pdrag.y);if(w<0.5&&h<0.5)return;
     f.x=r1((x+pdrag.x)/2);f.y=r1((y+pdrag.y)/2);
     if(f.t==='cone'){f.cw=r1(w);f.ch=r1(h);}else{f.fw=r1(w);f.fd=r1(h);}
-  }else if(EDGE_FEATS.includes(f.t)){f.u=r1(pdrag.fu+(f.side[0]==='x'?y-pdrag.y:x-pdrag.x));}
-  else{f.x=r1(pdrag.fx+x-pdrag.x);f.y=r1(pdrag.fy+y-pdrag.y);}
+  }else if(isEdge(f)){f.u=snapTo('u',pdrag.fu+(f.side[0]==='x'?y-pdrag.y:x-pdrag.x),f.side,fine);}
+  else{f.x=snapTo('x',pdrag.fx+x-pdrag.x,null,fine);f.y=snapTo('y',pdrag.fy+y-pdrag.y,null,fine);}
+  const pt=ptOf(f);showXY(pt.x,pt.y,FEAT[f.t].name);
   markDirty();drawEd();
 });
-$('plEdit').addEventListener('pointerup',()=>{if(pdrag){pdrag=null;renderFeats();if(edMode.startsWith('add:')){edMode='select';document.querySelectorAll('#plPal button').forEach(b=>b.classList.toggle('on',b.dataset.mode==='select'));setHint();}}});
+$('plEdit').addEventListener('pointerleave',()=>{if(!pdrag)showXY(null);},true);
+$('plEdit').addEventListener('pointerup',()=>{if(pdrag){const was=pdrag;pdrag=null;if(was.pin)updPinRow(edPin);else renderFeats();if(edMode.startsWith('add:')){edMode='select';document.querySelectorAll('#plPal button').forEach(b=>b.classList.toggle('on',b.dataset.mode==='select'));setHint();}}});
 $('plEdit').addEventListener('keydown',e=>{
-  if(e.target.id==='plCanvas'&&(e.key==='Delete'||e.key==='Backspace')&&edSel>=0){ed.features.splice(edSel,1);edSel=-1;markDirty();renderFeats();drawEd();}
+  if(e.target.id!=='plCanvas')return;
+  if((e.key==='Delete'||e.key==='Backspace')&&edSel>=0){ed.features.splice(edSel,1);edSel=-1;markDirty();renderFeats();drawEd();return;}
+  // arrow keys nudge the selected feature or pin 0.1 mm (Shift: 1 mm), the way the arrow points on the picture
+  if(!/^Arrow/.test(e.key)||(edSel<0&&edPin<0))return;
+  e.preventDefault();
+  const st=e.shiftKey?1:0.1,dx=e.key==='ArrowRight'?st:e.key==='ArrowLeft'?-st:0,dy=e.key==='ArrowUp'?st:e.key==='ArrowDown'?-st:0;
+  if(edPin>=0){const q=ed.pins[edPin];if(!q||q.x===undefined)return;q.x=+(q.x+dx).toFixed(2);q.y=+(q.y+dy).toFixed(2);updPinRow(edPin);showXY(q.x,q.y,q.n);}
+  else{const f=ed.features[edSel];
+    if(!isEdge(f)){f.x=+(f.x+dx).toFixed(2);f.y=+(f.y+dy).toFixed(2);}
+    else if(f.u!==undefined)f.u=+(f.u+(f.side==='xmin'||f.side==='xmax'?dy:dx)).toFixed(2);
+    renderFeats();const pt=ptOf(f);showXY(pt.x,pt.y,FEAT[f.t].name);}
+  markDirty();drawEd();
+});
+// clicking into a pin's row in the Pins list selects that pin on the picture
+$('plEdit').addEventListener('focusin',e=>{
+  const tr=e.target.closest&&e.target.closest('tr[data-prow]');if(!tr)return;
+  const i=+tr.dataset.prow;if(i===edPin)return;edPin=i;edSel=-1;renderFeats();updPinRow(i);drawEd();
 });
 new ResizeObserver(()=>{if(plBack.style.display==='grid')drawEd();}).observe($('plEdit'));
 function addTypical(){
@@ -5634,10 +5817,11 @@ function finishSide(pins){
 // Optional and the only part of the app that uses the internet (only when you ask it to read a drawing).
 // The key is kept on this computer only and is never exported with parts.
 const AI_MODELS=['gemini-2.5-flash','gemini-3.6-flash','gemini-3.8-flash','gemini-3-flash-preview','gemini-2.5-flash-lite'];
-// Which AI does the reading: Google Gemini (free key) or Claude (paid key). Each keeps its own key.
-const PROVIDERS={gemini:{name:'Google Gemini (free)',key:'geminiKey'},claude:{name:'Claude (paid per use)',key:'claudeKey'}};
+// Which AI does the reading: Google Gemini (free key), NVIDIA (free key) or Claude (paid key). Each keeps its own key.
+const PROVIDERS={gemini:{name:'Google Gemini (free)',short:'Gemini',key:'geminiKey'},nvidia:{name:'NVIDIA (free)',short:'NVIDIA',key:'nvidiaKey'},claude:{name:'Claude (paid per use)',short:'Claude',key:'claudeKey'}};
 const aiProv=()=>PROVIDERS[WF.store.get('aiProvider')]?WF.store.get('aiProvider'):'gemini';
 const aiKey=p=>WF.store.get(PROVIDERS[p||aiProv()].key);
+const keyLabel=()=>(aiKey()?'Change ':'Set up ')+PROVIDERS[aiProv()].short+' key…';
 let refDraw=null,aiNote='',aiBusy=false;
 function clearRef(){if(refDraw&&refDraw.url)URL.revokeObjectURL(refDraw.url);refDraw=null;aiNote='';aiPics=null;}
 // ---- product photos found by the look-up: downloaded, shown as thumbnails, then lined up by clicking corners
@@ -5814,16 +5998,108 @@ async function findPartFile(){
   openWeb('https://www.google.com/search?q='+encodeURIComponent(q.trim()+' fzpz'));
   WF.flash('Your web browser is searching for part files. Download a .fzpz that matches your board, then drag it onto the part picture here (or click "Import pins…" and "Use a .fzpz file…").',10000);
 }
-async function askKey(){
-  const p=aiProv(),name=PROVIDERS[p].key,has=!!aiKey(p),claude=p==='claude';
-  const howTo=claude
-    ?'Claude is a paid service: you add credit to an Anthropic account and each look-up uses a little of it.\n\n1. Click OK with the box empty to open the Anthropic Console and sign in or sign up.\n2. Add some credit under Billing.\n3. Go to Settings › API Keys, click "Create Key" and copy it.\n4. Come back, click "Set up Claude key…" again and paste it here.'
-    :'Google\'s Gemini AI is free.\n\n1. Click OK with the box empty to open Google AI Studio and sign in with a Google account.\n2. Click "Create API key" and copy it.\n3. Come back, click "Set up free AI key…" again and paste it here.';
-  const k=await WF.askText((has?'Paste a new '+(claude?'Claude':'Google Gemini')+' API key, or clear the box to remove it.':howTo)+'\n\nThe key stays on this computer only.',has?aiKey(p):'');
-  if(k===null)return;
-  const v=k.trim();
-  if(!v){if(has){localStorage.removeItem('opensketch.'+name);WF.flash('Key removed');}else openWeb(claude?'https://console.anthropic.com/settings/keys':'https://aistudio.google.com/apikey');renderEditor();return;}
-  WF.store.set(name,v);WF.flash((claude?'Claude':'Gemini')+' key saved on this computer');renderEditor();
+// Setting up an AI key: what each AI is good for, steps to get a key (free for Gemini and NVIDIA), a button that
+// opens the right web page, and a Test that sends "hello" to prove the key works before it is saved.
+const KEY_HELP={
+  gemini:{site:'https://aistudio.google.com/apikey',open:'Open Google AI Studio',
+    about:'Free. Good at looking parts up on the web. Can be busy at peak times.',
+    steps:['Click <b>Open Google AI Studio</b> below. It opens in your web browser.','Sign in with any Google account (a Gmail address is fine).','Click <b>Create API key</b>. If it asks for a project, let it make one for you.','Click <b>Copy</b> next to your new key (it starts with <code>AIza</code>).','Come back here, paste it in the box below and click <b>Test</b>.']},
+  nvidia:{site:'https://build.nvidia.com/settings/api-keys',open:'Open NVIDIA Build',
+    about:'Free (about 40 requests a minute), no card needed. Good for Make it with AI and reading pictures of drawings. It can\'t search the web, so Look up online uses what it already knows. Desktop app only.',
+    steps:['Click <b>Open NVIDIA Build</b> below. It opens in your web browser.','Sign in, or make a free NVIDIA account with your email (no card needed).','Click <b>Generate API Key</b> (or the <b>Get API Key</b> button on any model page).','Copy the key (it starts with <code>nvapi-</code>).','Come back here, paste it in the box below and click <b>Test</b>.']},
+  claude:{site:'https://console.anthropic.com/settings/keys',open:'Open the Anthropic Console',
+    about:'Paid per use from credit you add: roughly US$0.10–0.40 per web look-up, a few cents for the rest. The most reliable, and rarely busy.',
+    steps:['Click <b>Open the Anthropic Console</b> below and sign in or sign up.','Add some credit under <b>Billing</b>.','Go to <b>Settings › API Keys</b> and click <b>Create Key</b>.','Copy the key (it starts with <code>sk-ant-</code>).','Come back here, paste it in the box below and click <b>Test</b>.']}
+};
+// Send a tiny "hello" with this key and return the AI's reply (or throw, saying what is wrong in plain words).
+async function aiTest(p,key){
+  const ask='Reply with just the word: hello';
+  if(p==='nvidia'){
+    let last='';
+    for(const m of [WF.store.get('nvidiaModel'),...NV_TEXT].filter((m,i,a)=>m&&a.indexOf(m)===i)){
+      const {status,j,msg}=await nvChat(key,m,ask,20);
+      if(status===401||status===403)throw new Error('NVIDIA didn\'t accept this key. Check you copied all of it (it starts with nvapi-).');
+      if(status===429)throw new Error('The key looks fine, but NVIDIA is busy or the free limit was reached. Wait a minute and test again.');
+      if(status===200){const c=j.choices&&j.choices[0];return String((c&&c.message&&c.message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').trim()||'(an empty reply)';}
+      last=msg||'HTTP '+status;// busy or renamed model: try the next
+    }
+    throw new Error('NVIDIA didn\'t answer ('+last+'). The key may still be fine: test again in a minute.');
+  }
+  if(p==='claude'){
+    const SDK=window.AnthropicSDK;if(!SDK)throw new Error('The Claude add-on is missing from this copy of the app.');
+    try{
+      const m=await new SDK({apiKey:key,dangerouslyAllowBrowser:true,maxRetries:1}).messages.create({model:'claude-haiku-5-5',max_tokens:20,messages:[{role:'user',content:ask}]});
+      return m.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim()||'(an empty reply)';
+    }catch(e){
+      if(e instanceof SDK.AuthenticationError||e instanceof SDK.PermissionDeniedError)throw new Error('Anthropic didn\'t accept this key. Check you copied all of it (it starts with sk-ant-).');
+      if(e instanceof SDK.BadRequestError&&/credit/i.test(e.message))throw new Error('The key works, but the account has no credit. Add some under Billing at console.anthropic.com.');
+      if(e instanceof SDK.APIConnectionError)throw new Error('Couldn\'t reach Anthropic. Check the internet connection.');
+      throw new Error((e&&e.message)||String(e));
+    }
+  }
+  let last='';
+  for(const m of [WF.store.get('geminiModel'),...AI_MODELS].filter((m,i,a)=>m&&a.indexOf(m)===i)){
+    let r;
+    try{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:ask}]}]})});}
+    catch(e){throw new Error('Couldn\'t reach Google. Check the internet connection.');}
+    const j=await r.json().catch(()=>({})),msg=(j.error&&j.error.message)||'';
+    if(r.status===401||r.status===403||/API key/i.test(msg))throw new Error('Google didn\'t accept this key. Check you copied all of it (it starts with AIza).');
+    if(r.status===429)throw new Error('The key works, but the free limit is used up for now. Try again later.');
+    if(r.ok){const c=j.candidates&&j.candidates[0];return ((c&&c.content&&c.content.parts)||[]).map(x=>x.text||'').join('').trim()||'(an empty reply)';}
+    last=msg||'HTTP '+r.status;// busy or renamed model: try the next
+  }
+  throw new Error('Google is busy right now ('+last+'). The key may still be fine: test again in a minute.');
+}
+// After an AI or key changes, redraw whichever window shows the AI menu.
+function aiChanged(){
+  if(plBack.style.display==='grid'&&ed)renderEditor();
+  if(wrBack.style.display==='grid')renderWiringSide();
+}
+function askKey(){
+  return new Promise(res=>{
+    const back=document.createElement('div');back.id='askBack';// (while it is open, keys belong to it)
+    back.innerHTML='<div id="askBox" class="keyBox"></div>';
+    const box=back.querySelector('#askBox');
+    let p=aiProv(),busy=false;
+    const draw=()=>{
+      const h=KEY_HELP[p],has=!!aiKey(p);
+      box.innerHTML=`<div class="kHead"><b>AI key for</b> <select data-k="prov">${Object.entries(PROVIDERS).map(([k,v])=>`<option value="${k}"${k===p?' selected':''}>${esc(v.name)}${aiKey(k)?' ✓':''}</option>`).join('')}</select></div>
+<div class="ewNote">${h.about}</div>${has?'<div class="ok">✓ A key is saved for this AI. Paste a new one to replace it.</div>':''}
+<ol>${h.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+<div class="btns kOpen"><button data-k="open">${esc(h.open)}</button></div>
+<input data-k="key" autocomplete="off" spellcheck="false" placeholder="Paste your ${esc(PROVIDERS[p].short)} key here" value="${esc(has?aiKey(p):'')}">
+<div class="kTest"></div>
+<div class="btns">${has?'<button data-k="remove">Remove key</button>':''}<button data-k="test">Test</button><button data-ok>Save</button><button data-cancel>Cancel</button></div>
+<div class="ewNote" style="margin-top:6px">The key stays on this computer only.</div>`;
+      box.querySelector('input').focus();
+    };
+    const done=()=>{back.remove();aiChanged();res();};
+    const save=()=>{
+      const v=box.querySelector('input').value.trim();
+      if(v){WF.store.set(PROVIDERS[p].key,v);WF.store.set('aiProvider',p);WF.flash(PROVIDERS[p].short+' key saved on this computer. WaughForm now uses '+PROVIDERS[p].name+'.',5000);}
+      done();
+    };
+    const test=async()=>{
+      const v=box.querySelector('input').value.trim(),out=box.querySelector('.kTest');
+      if(!v){out.innerHTML='<span class="bad">Paste a key in the box first.</span>';return;}
+      busy=true;box.querySelectorAll('button').forEach(b=>b.disabled=true);
+      out.innerHTML='<span class="ewNote">Sending "hello" to '+esc(PROVIDERS[p].short)+'…</span>';
+      try{const reply=await aiTest(p,v);out.innerHTML='<span class="ok">✓ Key works. '+esc(PROVIDERS[p].short)+' replied: "'+esc(reply.slice(0,80))+'". Click Save to use it.</span>';}
+      catch(e){out.innerHTML='<span class="bad">✗ '+esc(e.message||String(e))+'</span>';}
+      busy=false;box.querySelectorAll('button').forEach(b=>b.disabled=false);
+    };
+    box.addEventListener('change',e=>{if(e.target.dataset.k==='prov'){p=e.target.value;draw();}});
+    box.addEventListener('click',e=>{
+      const k=e.target.dataset.k;if(busy)return;
+      if(k==='open')openWeb(KEY_HELP[p].site);
+      else if(k==='test')test();
+      else if(k==='remove'){localStorage.removeItem('opensketch.'+PROVIDERS[p].key);WF.flash(PROVIDERS[p].short+' key removed');draw();}
+      else if(e.target.hasAttribute('data-ok'))save();
+      else if(e.target.hasAttribute('data-cancel'))done();
+    });
+    box.addEventListener('keydown',e=>{e.stopPropagation();if(busy)return;if(e.key==='Enter'&&e.target.tagName==='INPUT')save();else if(e.key==='Escape')done();});
+    document.body.appendChild(back);draw();
+  });
 }
 const AI_PROMPT=`You read mechanical dimension drawings of small electronic parts (dev boards, breakout boards, sensors, microphones, amplifiers, speakers, batteries, displays, switches) and return their sizes, for designing a 3D-printed box around them.
 Return ONLY a JSON object:
@@ -5932,7 +6208,7 @@ async function gemini(parts,tools){
     if(r.status===500||r.status===503){busy++;skipped=msg;continue;}
     if(r.status===404||(r.status===400&&/not (found|supported)|not enabled|unsupported|not available/i.test(msg))){skipped=msg;continue;}// model renamed, retired or without this tool: try the next
     if(r.status===429)throw new Error('The free AI limit has been reached for now. Wait a minute (or until tomorrow) and try again.');
-    if(r.status===401||r.status===403||/API key/i.test(msg))throw new Error('Google didn\'t accept the AI key. Click "Change AI key…" and paste it again.');
+    if(r.status===401||r.status===403||/API key/i.test(msg))throw new Error('Google didn\'t accept the AI key. Click "Change Gemini key…" and paste it again.');
     if(!r.ok)throw new Error('Google said: '+msg);
     if(!web)WF.store.set('geminiModel',m);
     const cand=j.candidates&&j.candidates[0],txt=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
@@ -5942,8 +6218,54 @@ async function gemini(parts,tools){
     const g=(cand.groundingMetadata&&cand.groundingMetadata.groundingChunks)||[];
     return {data,sources:aiSources(data,g.filter(c=>c.web&&c.web.uri).map(c=>({uri:c.web.uri,title:c.web.title||'source'})))};
   }
-  if(busy)throw (web?softErr:(m=>new Error(m)))('Google\'s free AI is too busy right now. Try again in a few minutes, or switch to Claude.');
+  if(busy)throw (web?softErr:(m=>new Error(m)))('Google\'s free AI is too busy right now. Try again in a few minutes, or switch to NVIDIA or Claude.');
   throw web?softErr('Web search for the AI isn\'t available on this key ('+skipped+').'):new Error('None of Google\'s free Gemini models answered. They may have been renamed; an app update will fix this.');
+}
+// One request to NVIDIA's free AI (build.nvidia.com), passed on by the desktop app because NVIDIA doesn't accept
+// calls straight from a web page. It can't search the web. pic: {b64,mime} to send a picture with the text.
+// Tries each model in turn, so a renamed or retired model doesn't break it.
+const NV_TEXT=['deepseek-ai/deepseek-v4.1-flash','moonshotai/kimi-k2.6','mistralai/mistral-large-4-1t-a52b','nvidia/llama-3.1-nemotron-70b-instruct'];
+const NV_VISION=['meta/llama-3.2-90b-vision-instruct','meta/llama-3.2-11b-vision-instruct'];
+async function nvChat(key,model,content,maxTokens){
+  const post=window.wfNative&&window.wfNative.aiPost;
+  if(!post)throw new Error('NVIDIA works in the WaughForm 3D desktop app only. Pick Gemini or Claude here.');
+  let r;
+  try{r=await post('https://integrate.api.nvidia.com/v1/chat/completions',key,JSON.stringify({model,messages:[{role:'user',content}],temperature:0.1,max_tokens:maxTokens}));}
+  catch(e){throw new Error('Couldn\'t reach NVIDIA. Check the internet connection and try again.');}
+  let j={};try{j=JSON.parse(r.text);}catch(e){}
+  return {status:r.status,j,msg:String(j.detail||j.title||(j.error&&(j.error.message||j.error))||'')};
+}
+async function nvidia(text,pic){
+  const key=aiKey('nvidia');
+  const order=pic?NV_VISION:[WF.store.get('nvidiaModel'),...NV_TEXT].filter((m,i,a)=>m&&a.indexOf(m)===i);
+  let busy=0,skipped='';
+  for(const m of order){
+    const content=pic?[{type:'text',text},{type:'image_url',image_url:{url:'data:'+pic.mime+';base64,'+pic.b64}}]:text;
+    const {status,j,msg}=await nvChat(key,m,content,8192);
+    aiLastReply=`NVIDIA model ${m} · HTTP ${status}\n`+JSON.stringify(j,null,1).slice(0,6000);
+    if(status===401||status===403)throw new Error('NVIDIA didn\'t accept the key. Click "Change NVIDIA key…" and paste it again.');
+    if(status===429||status>=500){busy++;skipped=msg;continue;}// busy or over the free limit: try the next model
+    if(status===404||(status===400&&/model|not found|not supported|unknown/i.test(msg))){skipped=msg;continue;}
+    if(status!==200)throw new Error('NVIDIA said: '+(msg||'HTTP '+status));
+    if(!pic)WF.store.set('nvidiaModel',m);
+    const c=j.choices&&j.choices[0],txt=String((c&&c.message&&c.message.content)||'');
+    aiLastReply=`NVIDIA model ${m} · finished: ${(c&&c.finish_reason)||'?'}\n\n`+(txt||JSON.stringify(j,null,1).slice(0,6000));
+    return {data:aiJSON(txt.replace(/<think>[\s\S]*?<\/think>/g,''),false),sources:[]};// (some models think out loud first)
+  }
+  if(busy)throw new Error('NVIDIA\'s free AI is busy right now, or the free limit (about 40 requests a minute) was reached. Wait a minute, or switch to another AI.');
+  throw new Error('None of NVIDIA\'s free models answered'+(skipped?' ('+skipped+')':'')+'. They may have been renamed; an app update will fix this.');
+}
+// NVIDIA takes pictures up to about 180 KB inside a request: shrink until it fits (drawings stay readable at ~1200 px).
+async function nvSmall(b64,mime){
+  if(b64.length<175000)return {b64,mime};
+  const im=await loadImg('data:'+mime+';base64,'+b64);
+  for(const px of [1600,1300,1100,900,700]){
+    const k=Math.min(1,px/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');
+    c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+    const s=c.toDataURL('image/jpeg',0.8).split(',')[1];if(s.length<175000)return {b64:s,mime:'image/jpeg'};
+  }
+  throw new Error('That picture is too detailed for NVIDIA. Crop it to just the drawing, or switch to Gemini or Claude.');
 }
 // Turn the AI's answer into the part being edited (a draft: nothing is saved until you click Save part).
 function applyDrawing(d,src,sources){
@@ -5979,6 +6301,10 @@ function applyDrawing(d,src,sources){
 // Have the chosen AI read a drawing (picture or PDF, base64) into part data.
 async function aiRead(b64,mime,hint){
   const ask=AI_PROMPT+'\n\n'+hint;
+  if(aiProv()==='nvidia'){
+    if(mime==='application/pdf')throw new Error('NVIDIA can\'t read PDFs. Use a picture of the drawing (a screenshot works), or switch to Gemini or Claude.');
+    return (await nvidia(ask,await nvSmall(b64,mime))).data;
+  }
   const {data}=aiProv()==='claude'
     ?await claude([mime==='application/pdf'?{type:'document',source:{type:'base64',media_type:mime,data:b64}}:{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:ask}],false)
     :await gemini([{inline_data:{mime_type:mime,data:b64}},{text:ask}],false);
@@ -6018,8 +6344,9 @@ Then answer using the format below. Also add "sources": [the https links of the 
 `+AI_PROMPT;
     // Three tries, each simpler than the last: search + open pages, search only, then the AI's own knowledge
     // (well-known boards such as the Arduino Nano are described in countless places it learned from).
-    const useClaude=aiProv()==='claude',known={tools:null,how:'the AI\'s own knowledge of "'+q+'" (no web pages)',busy:'Asking the AI what it already knows about "'+q+'"…',known:true};
-    const tries=useClaude
+    // (NVIDIA can't search the web, so it goes straight to what it already knows)
+    const useClaude=aiProv()==='claude',useNv=aiProv()==='nvidia',known={tools:null,how:'the AI\'s own knowledge of "'+q+'" (no web pages)',busy:'Asking the AI what it already knows about "'+q+'"…',known:true};
+    const tries=useNv?[known]:useClaude
       ?[{web:true,how:'a web search by Claude for "'+q+'"',busy:'Claude is searching the web for "'+q+'" and reading the datasheets… this can take a minute or two.'},known]
       :[{tools:[{google_search:{}},{url_context:{}}],how:'a web search for "'+q+'"',busy:'Searching the web for "'+q+'" and reading what it finds… this can take up to a minute.'},
         {tools:[{google_search:{}}],how:'a web search for "'+q+'"',busy:'Searching the web again (a simpler way)…'},known];
@@ -6028,7 +6355,7 @@ Then answer using the format below. Also add "sources": [the https links of the 
       aiBusy=t.busy;setHint();
       const text=t.known?`From your own knowledge (no web search), give the mechanical dimensions of this part: "${q}". Only answer if you know this part well; otherwise return {"error":"not found"}. Put every value you are not sure of in "uncertain".\n\n`+AI_PROMPT:ask;
       try{
-        const r=useClaude?await claude([{type:'text',text}],!!t.web):await gemini([{text}],t.tools);
+        const r=useClaude?await claude([{type:'text',text}],!!t.web):useNv?await nvidia(text):await gemini([{text}],t.tools);
         if(r.data.error||!(num(r.data.w,0)>0)){why.push('no sizes found');continue;}
         got={...r,how:t.how,known:t.known};break;
       }catch(e){if(!e.soft)throw e;why.push(e.message);}
@@ -6043,7 +6370,7 @@ Then answer using the format below. Also add "sources": [the https links of the 
     aiBusy=false;
     if(extra){aiNote=(/Exact positions/.test(extra)?aiNote.replace(/^<b>Draft[^<]*<\/b>[^.]*\./,'<b>Draft found online, with exact positions from a drawing:</b>'):lookupNote)+extra;}
     renderEditor();
-    WF.flash(got.known?'Draft filled in from the AI\'s own knowledge (the web search found nothing). Check every size before saving.':/Exact positions/.test(extra)?'Draft filled in from the web, with positions read from a dimension drawing. Check it, then Save part.':'Draft filled in from the web. Check it against the sources, then Save part.',8000);
+    WF.flash(got.known?(useNv?'Draft filled in from what NVIDIA\'s AI knows (it can\'t search the web). Check every size before saving.':'Draft filled in from the AI\'s own knowledge (the web search found nothing). Check every size before saving.'):/Exact positions/.test(extra)?'Draft filled in from the web, with positions read from a dimension drawing. Check it, then Save part.':'Draft filled in from the web. Check it against the sources, then Save part.',8000);
   }catch(e){aiBusy=false;aiFail(e);}
 }
 // Something went wrong: say what, and offer to show exactly what Google sent back.
@@ -6535,7 +6862,8 @@ is <select data-ef="ruleOp"><option value="above"${f.ruleOp!=='below'?' selected
   const unk=r.unknown.map(u=>esc(u.label)).join(', ');
   h+=`<div class="efbox">`+(r.unknown.length?`<div class="warn" style="line-height:1.45;margin-bottom:6px"><b>${r.unknown.length===1?'1 part needs':r.unknown.length+' parts need'} the AI:</b> ${unk}. WaughForm 3D doesn't know ${r.unknown.length===1?'it':'them'} yet, so click <b>Make it with AI</b> and your AI writes ${r.unknown.length===1?'its':'their'} code from the part's name, part-file details and pins.</div>`:'')+`<b>What should it do?</b> <span class="ewNote">(optional: in your own words; your AI adds it${window.wfNative&&window.wfNative.esphomeCheck?', then ESPHome checks it':''})</span>
 <textarea data-ef="desc" rows="3" style="width:100%;margin-top:4px" placeholder="In your own words, e.g. Light the LED red when the temperature is over 28 °C and green when it's fine, and turn on the relay when it's over 30 °C.">${esc(f.desc||'')}</textarea>
-<div class="ewRow"><button id="wrAi"${esphAiBusy?' disabled':''}>${esphAiBusy?'Writing… please wait':'Make it with AI'}</button>${canAI?'':'<span class="ewNote">Needs an AI key: set one up in Parts › Fill in automatically.</span>'}</div><div id="wrAiOut">${wr.aiMsg||''}</div></div>`;
+<div class="ewRow"><label>AI <select id="wrProv">${Object.entries(PROVIDERS).map(([k,v])=>`<option value="${k}"${aiProv()===k?' selected':''}>${esc(v.name)}${aiKey(k)?' ✓':''}</option>`).join('')}</select></label><button id="wrKey">${keyLabel()}</button></div>
+<div class="ewRow"><button id="wrAi"${esphAiBusy||!canAI?' disabled':''}>${esphAiBusy?'Writing… please wait':'Make it with AI'}</button>${canAI?'':'<span class="ewNote">Needs a key for this AI: click <b>'+esc(keyLabel())+'</b> above.</span>'}</div><div id="wrAiOut">${wr.aiMsg||''}</div></div>`;
   h+=`<textarea readonly class="wrCode" id="wrEsp" style="height:200px;margin-top:6px">${esc(esphCurrent(r))}</textarea>
 <div class="ewRow">${window.wfNative&&window.wfNative.esphomeSend?'<button id="wrEspSend" class="primary" title="Put this device straight into ESPHome Device Builder on this computer and open it, ready to Install">Send to ESPHome</button>':''}<button data-copy="wrEsp">Copy YAML</button><button id="wrEspSave">Save .yaml…</button>${window.wfNative&&window.wfNative.esphomeCheck?'<button id="wrEspCheck" title="Check the file with the ESPHome on this computer (the same as Validate in ESPHome Device Builder)">Check with ESPHome</button>':''}</div>
 <div id="wrEspOut"></div>`+(r.warn.length?`<ul style="list-style:none;padding:0;margin:6px 0">${r.warn.map(w=>`<li class="warn"><span class="ic">!</span><span style="color:var(--text)">${esc(w)}</span></li>`).join('')}</ul>`:'')+
@@ -6565,7 +6893,7 @@ async function esphWithAI(){
   const f=esphForm(),desc=(f.desc||'').trim(),P=wr.plan;
   const base=esphomeYaml(P,f);if(!base.yaml)return;
   if(!desc&&!base.unknown.length)return WF.flash('Every part is already in the file. Describe what the device should do in the box, then click Make it with AI.',6000);
-  if(!aiKey())return WF.flash('Set up an AI key first: Parts › Fill in automatically › Set up AI key…',6000);
+  if(!aiKey())return WF.flash('Set up a key for this AI first: click "'+keyLabel()+'" next to the AI menu.',6000);
   const check=window.wfNative&&window.wfNative.esphomeCheck,say=h=>{wr.aiMsg=h;const o=$('wrAiOut');if(o)o.innerHTML=h;};
   esphAiBusy=true;wr.ai=null;renderWiringSide();
   let yaml=base.yaml,notes='',ok=null,errs='',tries=0;
@@ -6574,7 +6902,7 @@ async function esphWithAI(){
       say(`<div class="ewNote">${tries?'Fixing what ESPHome found (try '+(tries+1)+' of 3)…':'Asking your AI ('+esc(PROVIDERS[aiProv()].name)+')… this usually takes 10–40 seconds.'}</div>`);
       const text=ESPH_AI_PROMPT+`\n\nThe parts in this device: ${P.insts.map(i=>i.label).join(', ')}.\nReadings (sensor ids): ${base.meas.map(m=>m.id+' = '+m.label+' in '+(m.unit==='cm'?'metres':m.unit)).join(', ')||'none'}.\nLight id: ${base.lightId||'none'}${base.rgb?' (an RGB light)':base.lightId?' (on/off only)':''}.\n\n`+(base.unknown.length?`Parts not in the file yet: write the ESPHome components for each of these, using exactly the GPIO pins given (they are already wired that way). Work out what each module is from its name, part-file details and pin names, then remove the "# Still to add" comment:\n${JSON.stringify(base.unknown,null,1)}\n\n`:'')+`What the user wants the device to do:\n"""${desc||'(nothing extra: just make every part work and report its readings)'}"""\n\n`+
         (tries?`Your last file failed ESPHome's check with these errors. Fix them and send the whole corrected file:\n${errs}\n\nYour last file:\n${yaml}`:`The current file:\n${yaml}`);
-      const {data}=aiProv()==='claude'?await claude([{type:'text',text}],false):await gemini([{text}],false);
+      const {data}=aiProv()==='claude'?await claude([{type:'text',text}],false):aiProv()==='nvidia'?await nvidia(text):await gemini([{text}],false);
       if(!data||typeof data.yaml!=='string'||!/esphome:/.test(data.yaml))throw softErr('The AI didn\'t send back a whole ESPHome file. Try again, or describe it more simply.');
       yaml=data.yaml.replace(/\r/g,'');if(!yaml.endsWith('\n'))yaml+='\n';notes=String(data.notes||'').slice(0,600);
       if(!check){ok=null;break;}
@@ -6607,6 +6935,7 @@ $('wrSide').addEventListener('click',e=>{
   if(el.dataset.copy){const ta=$(el.dataset.copy);ta.select();navigator.clipboard.writeText(ta.value).then(()=>WF.flash('Copied'),()=>{document.execCommand('copy');WF.flash('Copied');});return;}
   if(el.id==='wrToWiz'){closeWiring();openWizard();}
   if(el.id==='wrAi'){esphWithAI();return;}
+  if(el.id==='wrKey'){askKey();return;}
   if(el.id==='wrAiUndo'){e.preventDefault();wr.ai=null;wr.aiMsg='';renderWiringSide();return;}
   if(el.id==='wrEspSend'){
     const r=esphomeYaml(wr.plan,esphForm()),out=$('wrEspOut');if(!r.yaml)return;
@@ -6643,7 +6972,9 @@ $('wrSide').addEventListener('input',e=>{
   esphSet(el);const r=esphomeYaml(wr.plan,esphForm()),ta=$('wrEsp');if(ta&&r.yaml)ta.value=r.yaml;
 });
 $('wrSide').addEventListener('change',e=>{
-  const el=e.target;if(!el.dataset.ef)return;
+  const el=e.target;
+  if(el.id==='wrProv'){WF.store.set('aiProvider',el.value);renderWiringSide();if(!aiKey())WF.flash('Click "'+keyLabel()+'" to add the key for this AI',5000);return;}
+  if(!el.dataset.ef)return;
   esphSet(el);if(el.type==='radio'||el.type==='checkbox'||el.tagName==='SELECT')renderWiringSide();
 });
 $('wrSide').addEventListener('mouseover',e=>{const r=e.target.closest('.wrNet');const k=r?+r.dataset.net:-1;if(k!==wr.hi){wr.hi=k;drawWiring();}});
@@ -6764,9 +7095,11 @@ async function applyFritzingData(d){
   });
   const ctrl=pins.filter(p=>p.r==='gpio').length>=8;
   if(!ctrl)for(const p of pins)if(p.r==='gpio'){p.r='sig';delete p.g;}
+  // parts made from Eagle libraries also bring their mounting holes (mm from the top-left, like the pins)
+  const holes=g?(d.features||[]).filter(f=>f&&f.t==='hole').map(f=>({t:'hole',x:+(+f.x).toFixed(2),y:+(dd-f.y).toFixed(2),dia:+f.dia||3})):[];
   // a board drawn standing up is turned so its long side runs left to right, like every other part
   let turned=false;
-  if(g&&g.h>g.w*1.02){const t={w:g.w,d:g.h,pins,photo:g.photo};await turnPart(t);g.w=t.w;g.h=t.d;g.photo=t.photo;turned=true;}
+  if(g&&g.h>g.w*1.02){const t={w:g.w,d:g.h,pins,photo:g.photo,features:holes};await turnPart(t);g.w=t.w;g.h=t.d;g.photo=t.photo;turned=true;}
   const fresh=ed.name==='New part'&&!ed.features.length&&!ed.photo;
   let all=true;
   if(!fresh){
@@ -6781,12 +7114,15 @@ async function applyFritzingData(d){
       const t=title.toLowerCase();ed.type=ctrl?'board':/speaker/.test(t)?'speaker':/batter|lipo/.test(t)?'battery':/switch/.test(t)?'switch':/display|oled|lcd|tft/.test(t)?'display':/mic/.test(t)?'mic':/amp/.test(t)?'amp':/charg/.test(t)?'charger':/sensor|sonar|ultrason/.test(t)?'sensor':'other';
       ed.mount=TYPES[ed.type].mount;}
     if(g){ed.shape='rect';ed.w=+g.w.toFixed(2);ed.d=+g.h.toFixed(2);if(g.photo)ed.photo=g.photo;}
+    if(g&&holes.length)ed.features=[...ed.features.filter(f=>f.t!=='hole'),...holes];
   }
   if(ctrl&&/esp32-?s3/i.test(title))ed.mcu='esp32s3';
-  // the parts library's licence (CC BY-SA) asks for this credit wherever its parts are used
-  ed.notes=('Pins'+(all&&g?', size and picture':'')+' imported from the part "'+title+'" ('+(fileName||'parts library')+'). Part data and picture © Fritzing contributors, CC BY-SA 3.0. Check the pin roles before wiring. The picture keeps the pin spacing exact but is sometimes drawn smaller than the real board: measure the board before designing a box.\n'+(ed.notes||'')).slice(0,2000);
+  // each library's licence asks for its credit wherever its parts are used (Fritzing: CC BY-SA 3.0; Eagle parts carry their own)
+  ed.notes=('Pins'+(all&&g?', size and picture':'')+(all&&holes.length?' and mounting holes':'')+' imported from the part "'+title+'" ('+(fileName||'parts library')+'). '+
+    (info&&info.credit?'Part data from an Eagle library: '+info.credit+' Check the pin roles before wiring. The size comes from the library\'s drawn outline: measure the board before designing a box.'
+      :'Part data and picture © Fritzing contributors, CC BY-SA 3.0. Check the pin roles before wiring. The picture keeps the pin spacing exact but is sometimes drawn smaller than the real board: measure the board before designing a box.')+'\n'+(ed.notes||'')).slice(0,2000);
   edDirty=true;edSel=-1;renderEditor();
-  WF.flash(pins.length+' pins imported'+(g?'':' (no picture found, so pin positions are unknown)')+(turned?', turned so the long side runs left to right':'')+'. Check each pin\'s role in the Pins list'+(all&&g?', and measure the board: these pictures are sometimes drawn smaller than the real board':'')+'. Then Save part.',9000);
+  WF.flash(pins.length+' pins'+(all&&holes.length?' and '+holes.length+' mounting hole'+(holes.length>1?'s':''):'')+' imported'+(g?'':' (no picture found, so pin positions are unknown)')+(turned?', turned so the long side runs left to right':'')+'. Check each pin\'s role in the Pins list'+(all&&g?', and measure the board: these pictures are sometimes drawn smaller than the real board':'')+'. Then Save part.',9000);
 }
 // ---- Parts browser: search the parts library (or the Fritzing parts on this computer) by name, by kind,
 // or by plain words for what a part does ("gyroscope", "air quality", "screen"), with a picture of each.
@@ -6846,9 +7182,12 @@ let webLib=null;
 function pickLibraryFile(){
   return new Promise(done=>{
     const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
-    inp.onchange=async()=>{const fl=inp.files[0];if(!fl)return done(null);
-      try{WF.flash('Reading the parts library…',8000);const j=JSON.parse(await fl.text());
-        if(!j||!Array.isArray(j.parts)||!j.parts.length||!j.parts[0].conns)throw new Error('not a WaughForm 3D parts library');
+    inp.multiple=true;// parts-library.json, and eagle-parts.json too if it is chosen with it
+    inp.onchange=async()=>{const fls=[...inp.files];if(!fls.length)return done(null);
+      try{WF.flash('Reading the parts library…',8000);
+        const all=await Promise.all(fls.map(async fl=>JSON.parse(await fl.text())));
+        if(all.some(x=>!x||!Array.isArray(x.parts)||!x.parts.length||!x.parts[0].conns))throw new Error('not a WaughForm 3D parts library');
+        const j={...all[0],parts:all.flatMap(x=>x.parts)};
         try{await idbSet('parts-library',j);}catch(e){WF.flash('The browser wouldn\'t keep the library, so it will ask again next time',6000);}
         WF.flash(j.parts.length+' parts loaded'+' and kept in this browser',4000);done(j);}
       catch(e){WF.flash('That file isn\'t the parts library ('+(e.message||e)+'). Choose parts-library.json.',7000);done(null);}};
@@ -6865,7 +7204,7 @@ async function partsSource(ask){
   if(!webLib)return null;
   const P=webLib.parts;
   return {list:async()=>P.map((p,id)=>({id,title:p.title,folder:p.folder,library:true,family:p.info.family||'',tags:p.info.tags||[],desc:(p.info.description||'').slice(0,300)})),
-    load:async id=>{const d=P[id];if(!d)throw new Error('no such part');return {data:{title:d.title,conns:d.conns,info:d.info,g:d.g,file:d.file}};}};
+    load:async id=>{const d=P[id];if(!d)throw new Error('no such part');return {data:{title:d.title,conns:d.conns,info:d.info,g:d.g,file:d.file,features:d.features}};}};
 }
 let partsSrc=null;
 const fzPreviewCache=new Map();
@@ -6971,7 +7310,7 @@ $('wrPng').onclick=()=>{const cv=$('wrCanvas');cv.toBlob(b=>WF.downloadBlob('Wir
 document.addEventListener('keydown',e=>{
   const open=ewBack.style.display==='grid'?ewBack:plBack.style.display==='grid'?plBack:wrBack.style.display==='grid'?wrBack:null;
   if(!open||document.getElementById('askBack'))return;
-  if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(open===plBack&&edMode!=='select'){edMode='select';clicks=[];rawImg=null;renderEditor();}else if(open===ewBack)closeWizard();else if(open===wrBack)closeWiring();else closeLibrary();return;}
+  if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(open===plBack&&edMode!=='select'){edMode='select';clicks=[];rawImg=null;renderEditor();}else if(open===plBack&&plBig)setBig(false);else if(open===ewBack)closeWizard();else if(open===wrBack)closeWiring();else closeLibrary();return;}
   if(!open.contains(e.target))e.stopImmediatePropagation();
 },true);
 for(const b of [ewBack,plBack,wrBack])b.addEventListener('keydown',e=>e.stopPropagation());
