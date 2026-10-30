@@ -25,6 +25,15 @@ WaughForm 3D (© 2026 David John Waugh, GNU GPL v3 or later) includes the follow
 - The converted library is shared under the same CC BY-SA 3.0 licence, not the GPL.
 - Parts made from it, or brought in with "Import pins…", keep this credit in their notes. Anyone sharing them must keep the credit and the same licence.
 
+## Eagle part libraries (SparkFun, Ai)
+
+- The extra boards in "Browse parts" ([`desktop/eagle-parts.json`](desktop/eagle-parts.json): about 120 board-sized modules with their outlines, mounting holes, pin names and drawn pictures) are converted from these Eagle libraries by [`tools/eagle-to-parts.py`](tools/eagle-to-parts.py):
+  - **SparkFun Eagle Libraries**, © SparkFun Electronics. Licensed under **Creative Commons Attribution-ShareAlike 4.0** (CC BY-SA 4.0): https://creativecommons.org/licenses/by-sa/4.0/ . Source: https://github.com/sparkfun/SparkFun-Eagle-Libraries
+  - **Ai EAGLE Libraries**, © ACROBOTIC (https://acrobotic.com). Licensed under the **Beerware** licence. Source: https://github.com/acrobotic/Ai_EAGLE_Libraries
+- Only libraries whose licence allows sharing are used (the converter's `--shareable` option).
+- The converted boards are shared under CC BY-SA 4.0 (the Ai boards are also free under Beerware), not the GPL.
+- Each board keeps its library's credit and licence in its description, and parts made from it keep them in their notes.
+
 ## Electron
 
 - The Windows app is built with Electron (MIT licence, © GitHub Inc. and Electron contributors), which includes Chromium and other open-source components.

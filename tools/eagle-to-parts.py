@@ -5,7 +5,9 @@ chips, and for each one takes the board outline (Eagle's Dimension layer, otherw
 mounting holes, the pins with their names (from the library's devices) and draws a picture of the board.
 Writes desktop/eagle-parts.json in the same form as parts-library.json; the app lists both.
 
-Usage:  python tools/eagle-to-parts.py <folder with .lbr files> [more folders...]
+Usage:  python tools/eagle-to-parts.py [--shareable] <folder with .lbr files> [more folders...]
+  --shareable  only libraries whose licence lets the converted parts be shared (SparkFun, Ai), so the file
+               can go on GitHub and in the released app
 """
 import base64, glob, html, json, os, re, sys, xml.etree.ElementTree as ET
 from datetime import date
@@ -13,12 +15,13 @@ from datetime import date
 OUT = os.path.join(os.path.dirname(__file__), '..', 'desktop', 'eagle-parts.json')
 FRITZING = os.path.join(os.path.dirname(__file__), '..', 'desktop', 'parts-library.json')
 
-# Who made each library and its licence, for the credit every part keeps (checked in the downloaded copies).
+# Who made each library, its licence (for the credit every part keeps, as checked in the downloaded copies) and
+# whether that licence lets the converted parts be shared.
 LIBS = [
-    (r'sparkfun|lilypad', 'SparkFun Eagle Libraries', 'CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)'),
-    (r'^ai_', 'Ai EAGLE Libraries', 'Beerware licence'),
-    (r'adafruit', 'Adafruit Eagle Library', 'licence not stated in the download: check before sharing'),
-    (r'seeed|opl', 'Seeed Open Parts Library (OPL)', 'licence not stated in the download: check before sharing'),
+    (r'sparkfun|lilypad', 'SparkFun Eagle Libraries', 'CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)', True),
+    (r'^ai_', 'Ai EAGLE Libraries by ACROBOTIC', 'Beerware licence', True),
+    (r'adafruit', 'Adafruit Eagle Library', 'licence not stated in the download: check before sharing', False),
+    (r'seeed|opl', 'Seeed Open Parts Library (OPL)', 'licence not stated in the download: check before sharing', False),
 ]
 # Which library wins when the same board is in several (the OPL comes in several near-identical versions).
 PRIORITY = ['adafruit', 'sparkfun', 'ai_', 'seeed', 'opl']
@@ -42,10 +45,10 @@ KINDS = [  # first match wins, so the more particular kinds come first; words ma
 
 def lib_info(fn):
     name = os.path.basename(fn)
-    for pat, who, lic in LIBS:
+    for pat, who, lic, share in LIBS:
         if re.search(pat, name, re.I) or re.search(pat, fn, re.I):
-            return who, lic
-    return 'Eagle library', 'licence not stated in the download: check before sharing'
+            return who, lic, share
+    return 'Eagle library', 'licence not stated in the download: check before sharing', False
 
 def text(el):
     """Plain words from an Eagle description (often a small web page)."""
@@ -137,9 +140,11 @@ def picture(b, pins, holes, title):
 def norm(t):
     return re.sub(r'[^a-z0-9]', '', t.lower())
 
-def main(folders):
+def main(folders, shareable=False):
     files = sorted({f for d in folders for f in glob.glob(os.path.join(d, '**', '*.lbr'), recursive=True) if '__MACOSX' not in f},
                    key=lambda f: next((i for i, k in enumerate(PRIORITY) if k in os.path.basename(f).lower()), 99))
+    if shareable:
+        files = [f for f in files if lib_info(f)[2]]
     known = set()
     try:
         known = {norm(p['title']) for p in json.load(open(FRITZING, encoding='utf-8'))['parts']}
@@ -153,7 +158,7 @@ def main(folders):
             print('  can\'t read', fn)
             continue
         lib = os.path.splitext(os.path.basename(fn))[0]
-        who, lic = lib_info(fn)
+        who, lic, _ = lib_info(fn)
         names = pin_names(root)
         for pkg in root.iter('package'):
             pname = pkg.get('name') or ''
@@ -221,6 +226,7 @@ def main(folders):
         print(f'  {v:4} {k}')
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
+    args = [a for a in sys.argv[1:] if a != '--shareable']
+    if not args:
         sys.exit(__doc__)
-    main(sys.argv[1:])
+    main(args, shareable='--shareable' in sys.argv)
