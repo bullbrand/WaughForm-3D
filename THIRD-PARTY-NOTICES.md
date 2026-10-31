@@ -34,6 +34,15 @@ WaughForm 3D (© 2026 David John Waugh, GNU GPL v3 or later) includes the follow
 - The converted boards are shared under CC BY-SA 4.0 (the Ai boards are also free under Beerware), not the GPL.
 - Each board keeps its library's credit and licence in its description, and parts made from it keep them in their notes.
 
+## KiCad footprint libraries (SparkFun)
+
+- The extra boards in "Browse parts" ([`desktop/kicad-parts.json`](desktop/kicad-parts.json): board-sized modules with their outlines, mounting holes, pin numbers/names and drawn pictures) are converted from these KiCad footprint libraries by [`tools/kicad-to-parts.py`](tools/kicad-to-parts.py):
+  - **SparkFun KiCad Libraries**, © SparkFun Electronics. Licensed under **Creative Commons Attribution-ShareAlike 4.0** (CC BY-SA 4.0): https://creativecommons.org/licenses/by-sa/4.0/ . Source: https://github.com/sparkfun/SparkFun-KiCad-Libraries
+- Only libraries whose licence allows sharing are used (the converter's `--shareable` option).
+- The converted boards are shared under CC BY-SA 4.0, not the GPL.
+- A KiCad footprint file only carries pad numbers, not signal names (that link lives in the schematic symbol, not the footprint library), so some pins come through as their bare number rather than a name: check and rename pin roles before wiring, same as the Eagle and Fritzing parts.
+- Each board keeps its library's credit and licence in its description, and parts made from it keep them in their notes.
+
 ## Electron
 
 - The Windows app is built with Electron (MIT licence, © GitHub Inc. and Electron contributors), which includes Chromium and other open-source components.

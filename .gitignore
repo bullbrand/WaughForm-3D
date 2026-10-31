@@ -11,3 +11,11 @@ manual/*.pdf
 *.fzpz
 .DS_Store
 Thumbs.db
+__pycache__/
+
+# downloaded source libraries for tools/eagle-to-parts.py and tools/kicad-to-parts.py: only their
+# converted output (desktop/eagle-parts.json, desktop/kicad-parts.json) belongs in the repository
+*.pretty/
+*-footprints-master/
+SparkFun-KiCad-Libraries-main/
+kicad-footprints-master/

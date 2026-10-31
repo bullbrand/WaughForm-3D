@@ -111,32 +111,37 @@ def at(node):
 
 # ---------------------------------------------------------------- one footprint -> board data
 def board(fp):
-    """Outline (mm, KiCad y-down), pads and holes of one footprint, or None if it isn't a module."""
-    edges = []
+    """Outline (mm, KiCad y-down), pads and holes of one footprint, or None if it isn't a module.
+    Prefers the Edge.Cuts layer (the real board edge); many hand-made module footprints draw their
+    outline on F.Fab instead (no Edge.Cuts at all, left for whoever uses the part to draw their own
+    board), so that's used as a fallback."""
+    by_layer = {}
+    def add(layer, pts):
+        by_layer.setdefault(layer, []).extend(pts)
     for ln in children(fp, 'fp_line'):
         la = child(ln, 'layer')
-        if la and la[1] == 'Edge.Cuts':
+        if la:
             s, e = child(ln, 'start'), child(ln, 'end')
-            edges += [(num(s[1]), num(s[2])), (num(e[1]), num(e[2]))]
+            add(la[1], [(num(s[1]), num(s[2])), (num(e[1]), num(e[2]))])
     for rc in children(fp, 'fp_rect'):
         la = child(rc, 'layer')
-        if la and la[1] == 'Edge.Cuts':
+        if la:
             s, e = child(rc, 'start'), child(rc, 'end')
-            edges += [(num(s[1]), num(s[2])), (num(e[1]), num(e[2]))]
+            add(la[1], [(num(s[1]), num(s[2])), (num(e[1]), num(e[2]))])
     for cc in children(fp, 'fp_circle'):
         la = child(cc, 'layer')
-        if la and la[1] == 'Edge.Cuts':
+        if la:
             c, e = child(cc, 'center'), child(cc, 'end')
             cx, cy = num(c[1]), num(c[2])
             r = ((num(e[1]) - cx) ** 2 + (num(e[2]) - cy) ** 2) ** 0.5
-            edges += [(cx - r, cy - r), (cx + r, cy + r)]
+            add(la[1], [(cx - r, cy - r), (cx + r, cy + r)])
     for pg in children(fp, 'fp_poly'):
         la = child(pg, 'layer')
-        if la and la[1] == 'Edge.Cuts':
+        if la:
             pts = child(pg, 'pts')
             if pts:
-                for xy in children(pts, 'xy'):
-                    edges.append((num(xy[1]), num(xy[2])))
+                add(la[1], [(num(xy[1]), num(xy[2])) for xy in children(pts, 'xy')])
+    edges = by_layer.get('Edge.Cuts') or by_layer.get('F.Fab') or []
     pads, holes = [], []
     for p in children(fp, 'pad'):
         pnum, ptype = (p[1] if len(p) > 1 else ''), (p[2] if len(p) > 2 else '')
