@@ -4249,7 +4249,7 @@ const FEAT={
   cone:{name:'Speaker cone',def:{x:10,y:10,cw:30,ch:30},tip:'Gets a grille in the wall (or lid) in front of it.'},
   opening:{name:'Round opening',def:{x:5,y:5,dia:16},tip:'A round hole through the wall (or lid) the part faces, for ultrasonic transducers, IR sensors, buzzers or camera lenses. A wall part with openings faces the wall with its component side.'},
   hole:{name:'Mounting hole',def:{x:3,y:3,dia:3},tip:'Gets a screw post with a pilot hole (or a locating peg for wall parts).'},
-  button:{name:'Button',def:{x:5,y:5,dia:4,lid:'hole',bh:1.5},tip:'What the lid gets above it: a finger hole, a 1.5 mm hole for a paper clip (reset buttons), or a flex button: a springy tab cut into the lid with a post underneath that presses the button. Set "Button height" (how tall the switch is above the board) so the post stops just above it.'},
+  button:{name:'Button',def:{x:5,y:5,dia:4,lid:'hole',btop:3.1},tip:'Click the middle of the button. Then choose what the lid gets above it: a finger hole, a 1.5 mm hole for a paper clip (good for reset buttons), or a flex button: a springy tab in the lid with a post underneath that presses the button. For a flex button, lay the part on the table and measure from the table to the top of the button: WaughForm works out the posts and the box itself.'},
   led:{name:'LED',def:{x:5,y:5,dia:3,poke:0},tip:'Gets a light hole in the lid above it. Set "Pokes out" to have the LEDs stand that many mm out of the lid: the part is raised on taller posts to reach, however high the box is.'},
   header:{name:'Pin header row',def:{x:10,y:2,fw:20,fd:2.54,dir:'down'},tip:'Pins are kept clear of the rails. Prototype style adds room for Dupont plugs above or below.'},
   heat:{name:'Gets hot',def:{x:5,y:5,fw:10,fd:10},tip:'Gets vent slots in the lid above it.'},
@@ -4258,7 +4258,7 @@ const FEAT={
 };
 const EDGE_FEATS=['port','switch','antenna','wire'],RECT_FEATS=['cone','header','heat','window'];
 const FFIELDS={port:['kind','thru','side','u','zc','pw','ph'],switch:['side','u','zc','pw','ph'],antenna:['side','u','len','width'],wire:['side','u','dia'],
-  mic:['x','y','dia'],cone:['x','y','cw','ch'],opening:['x','y','dia'],hole:['x','y','dia'],button:['x','y','lid','dia','bh'],led:['x','y','dia','poke'],
+  mic:['x','y','dia'],cone:['x','y','cw','ch'],opening:['x','y','dia'],hole:['x','y','dia'],button:['x','y','lid','dia','btop'],led:['x','y','dia','poke'],
   header:['x','y','fw','fd','dir'],heat:['x','y','fw','fd'],window:['x','y','fw','fd'],cutout:['thru','shape','x','y','cw','ch']};
 const THRU={wall:'side wall',lid:'lid',floor:'floor'};
 // Sits on an edge and opens through that side wall (side, u). A port set to open through the lid or the floor, and a
@@ -4269,11 +4269,15 @@ function fieldsOf(f){
   const wall=isEdge(f);
   if(f.t==='port')return wall?['kind','thru','side','u','zc','pw','ph']:['kind','thru','x','y','pw','ph'];
   if(f.t==='cutout')return ['thru','shape',...(wall?['side','u','zc']:['x','y']),'cw',...(f.shape==='rect'?['ch']:[])];
-  if(f.t==='button')return ['x','y','lid',...(f.lid==='pin'?[]:['dia']),...(f.lid==='flex'?['bh']:[])];
+  if(f.t==='button')return ['x','y','lid',...(f.lid==='pin'?[]:['dia']),...(f.lid==='flex'?['btop']:[])];
   return FFIELDS[f.t];
 }
 const BUTTON_LID={hole:'finger hole',pin:'paper-clip hole',flex:'flex button'};
-const FLABEL={x:'X',y:'Y',dia:'Ø',cw:'Width',ch:'Height',fw:'Length',fd:'Width',u:'Along edge',zc:'Centre above PCB',pw:'Cut-out W',ph:'Cut-out H',len:'Depth',width:'Width',side:'Edge',dir:'Pins point',kind:'Type',thru:'Opens through',shape:'Shape',poke:'Pokes out (mm)',lid:'In the lid',bh:'Button height'};
+const BUTTON_HELP={
+  hole:'A finger-size hole in the lid above the button.',
+  pin:'A 1.5 mm hole in the lid: push a straightened paper clip through it to press the button. Good for reset buttons.',
+  flex:'One measurement: lay the part on the table and measure from the table up to the top of the button. Solder tails or pins underneath are fine: WaughForm takes off "Pins / parts underneath" (set that once for the part), adds the posts and the box height itself, and leaves a 0.4 mm gap so it only presses when you push the tab.'};
+const FLABEL={x:'X',y:'Y',dia:'Ø',cw:'Width',ch:'Height',fw:'Length',fd:'Width',u:'Along edge',zc:'Centre above PCB',pw:'Cut-out W',ph:'Cut-out H',len:'Depth',width:'Width',side:'Edge',dir:'Pins point',kind:'Type',thru:'Opens through',shape:'Shape',poke:'Pokes out (mm)',lid:'In the lid',btop:'Button top, from the table'};
 // Port cut-out sizes: big enough for the plug's moulded body to reach the socket.
 const PORT_KINDS={'USB-C':[12.5,7],'2× USB-C':[25,8],'Micro-USB':[11,8],'Mini-USB':[11,8.5],'USB-A':[16,9],'DC barrel':[10,10],'3.5 mm jack':[7,7],'microSD':[14,3.5],'JST / wires':[7,5],'Custom':null};
 const ROUND_KINDS=new Set(['DC barrel','3.5 mm jack']);
@@ -4359,6 +4363,9 @@ function tidyPart(p){
   p.w=Math.max(0.5,num(p.w,10));p.d=Math.max(0.5,num(p.d,10));p.pcb=Math.max(0,num(p.pcb,1.6));p.h=Math.max(0,num(p.h,0));p.below=Math.max(0,num(p.below,0));
   if(!TYPES[p.type])p.type='other';if(p.shape!=='round')p.shape='rect';if(p.mount!=='wall')p.mount='floor';
   p.features=(p.features||[]).filter(f=>f&&FEAT[f.t]);
+  // (1.9.7 measured a flex button from the top of the board; now it is from the table the part lies on, resting on
+  // whatever sticks out underneath)
+  for(const f of p.features)if(f.t==='button'&&f.bh!==undefined){if(f.btop===undefined)f.btop=+(p.below+p.pcb+num(f.bh,1.5)).toFixed(2);delete f.bh;}
   for(const f of p.features){const d=FEAT[f.t].def;for(const k in d)if(f[k]===undefined)f[k]=d[k];}
   return p;
 }
@@ -4731,10 +4738,10 @@ function report(L){
       else warn(nm+': its LEDs only reach '+(out>0?fx(out)+' mm out of':fx(-out)+' mm below the top of')+' the lid, not '+fx(poke)+' mm out: set "Tallest part on top" to the LEDs\' real height above the board');
     }
     for(const f of (p.features||[]).filter(f=>f.t==='button'&&(f.lid==='flex'||f.lid==='pin'))){
-      const sw=it.zb+it.o.pcb+num(f.bh,1.5),under=L.H+st.floor-Math.min(1.2,st.floor-0.4);
+      const sw=it.zb+num(f.btop,it.o.pcb+1.5)-it.o.below,under=L.H+st.floor-Math.min(1.2,st.floor-0.4);
       if(f.lid==='pin'){const d=L.H+st.floor-sw;ok(nm+': 1.5 mm paper-clip hole above a button'+(d>18?' ('+fx(d)+' mm down: use a long pin)':''));}
       else if(under-(sw+0.4)>=0.5)ok(nm+': button pressed through a flex tab in the lid (post '+fx(under-(sw+0.4))+' mm long)');
-      else warn(nm+': a flex button\'s switch is almost touching the lid: check its "Button height", or use a paper-clip hole');
+      else warn(nm+': a flex button\'s switch is almost touching the lid: check its "Button top", or use a paper-clip hole');
     }
     for(const f of (p.features||[]).filter(f=>f.t==='button'&&!(f.lid==='flex'||f.lid==='pin'))){const depth=L.H-(it.zb+it.o.pcb+it.o.h);if(depth>6)warn(nm+': a button is '+fx(depth)+' mm below the lid: press it through the hole with a pin, or fit a taller button');}
   }
@@ -4929,7 +4936,7 @@ async function buildSolids(L){
           if(st.lid!=='screws')lidSubs.push(wallCut(s,u-hw-0.5,u+hw+0.5,H-LIP-1,H+0.05,0,-1,LIP_T+LID_CLEAR+1));
           cutsPerWall[s].push([u-hw,u+hw]);
         }else if(ft.t==='button'){const [x,y]=pt(ft.x,ft.y);
-          if(ft.lid==='flex')flexButton(x,y,zb+o.pcb+num(ft.bh,1.5)+0.4);// the post stops 0.4 mm above the switch
+          if(ft.lid==='flex')flexButton(x,y,zb+num(ft.btop,o.pcb+1.5)-o.below+0.4);// measured from the table: the post stops 0.4 mm above the switch
           else lidHole(x,y,ft.lid==='pin'?0.75:ft.dia/2+0.6);}// a 1.5 mm hole takes a straightened paper clip
         else if(ft.t==='led'){const [x,y]=pt(ft.x,ft.y);lidHole(x,y,Math.max(1,ft.dia/2+0.3));}
         else if(ft.t==='mic'){const [x,y]=pt(ft.x,ft.y);lidHole(x,y,Math.max(1.25,ft.dia/2+0.25));}
@@ -5414,7 +5421,7 @@ function renderFeats(){
       return isPos(k)?`<label title="${esc(posTip(k==='u'?(f.side==='xmin'||f.side==='xmax'?'y':'x'):k))}">${posLabel(k,f.side)} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(toShow(k,f[k],f.side))}"></label>`
         :`<label>${FLABEL[k]} <input type="number" step="0.1" data-fi="${i}" data-fk="${k}" value="${fx(f[k])}"></label>`;
     }).join('');
-    return `<div class="plFeat${i===edSel?' on':''}" data-fsel="${i}"><div class="hd" data-fsel="${i}"><span data-fsel="${i}">${esc(FEAT[f.t].name)}</span><button class="x" data-fdel="${i}" title="Delete this feature">✕</button></div><div class="fl">${fields}</div></div>`;
+    return `<div class="plFeat${i===edSel?' on':''}" data-fsel="${i}"><div class="hd" data-fsel="${i}"><span data-fsel="${i}">${esc(FEAT[f.t].name)}</span><button class="x" data-fdel="${i}" title="Delete this feature">✕</button></div><div class="fl">${fields}</div>${f.t==='button'?`<div class="ewNote" style="margin-top:3px">${BUTTON_HELP[f.lid||'hole']}</div>`:''}</div>`;
   }).join('')||'<div class="ewNote">None yet. Pick a feature above the picture, then click or drag on the part. Ports, antennas and switches go on an edge.</div>';
 }
 const HINTS={
@@ -5454,6 +5461,8 @@ $('plEdit').addEventListener('change',e=>{
   if(el.dataset.fk&&el.tagName==='SELECT'){
     const f=ed.features[+el.dataset.fi];
     if(el.dataset.fk==='thru')setThru(f,el.value);else f[el.dataset.fk]=el.value;
+    // a first guess for a new flex button: a small switch on the board, the part resting on what sticks out underneath
+    if(el.dataset.fk==='lid'&&el.value==='flex'&&f.btop===FEAT.button.def.btop)f.btop=+(ed.below+ed.pcb+1.5).toFixed(2);
     if(el.dataset.fk==='kind'&&PORT_KINDS[el.value]){[f.pw,f.ph]=PORT_KINDS[el.value];}
     markDirty();renderFeats();drawEd();
   }
