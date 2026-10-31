@@ -25,7 +25,8 @@
       "app.html",
       "icon.ico",
       "parts-library.json",
-      "eagle-parts.json"
+      "eagle-parts.json",
+      "kicad-parts.json"
     ],
     "win": {
       "icon": "icon.ico"

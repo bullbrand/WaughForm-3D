@@ -1,0 +1,1 @@
+{"name":"WaughForm 3D KiCad parts","made":"2026-10-31","source":"none yet: run tools/kicad-to-parts.py on a KiCad footprint library to fill this in","credit":"Each part keeps the credit and licence of the KiCad library it came from (see its description). Pin numbers are from the footprint only: check and rename pin roles before wiring.","parts":[]}

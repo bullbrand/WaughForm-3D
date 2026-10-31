@@ -91,8 +91,9 @@ function partsLibrary() {
   catch (e) { library = []; }
   return library;
 }
-// Extra boards converted from Eagle part libraries by tools\eagle-to-parts.py: always listed, Fritzing or not,
-// with numbers from EAGLE_ID up so they don't clash with the other parts.
+// Extra boards converted from Eagle part libraries by tools\eagle-to-parts.py, and from KiCad footprint
+// libraries by tools\kicad-to-parts.py: always listed, Fritzing or not, with numbers from EAGLE_ID and
+// KICAD_ID up so they don't clash with the other parts.
 let eagle = null;
 const EAGLE_ID = 100000;
 function eagleParts() {
@@ -101,6 +102,14 @@ function eagleParts() {
   catch (e) { eagle = []; }
   return eagle;
 }
+let kicad = null;
+const KICAD_ID = 200000;
+function kicadParts() {
+  if (kicad) return kicad;
+  try { kicad = JSON.parse(fs.readFileSync(path.join(__dirname, 'kicad-parts.json'), 'utf8')).parts || []; }
+  catch (e) { kicad = []; }
+  return kicad;
+}
 const listed = (p, id) => ({id, title: p.title, folder: p.folder, library: true, family: p.info.family || '', tags: p.info.tags || [], desc: (p.info.description || '').slice(0, 300)});
 const loaded = d => ({data: {title: d.title, conns: d.conns, info: d.info, g: d.g, file: d.file, features: d.features}});
 const useLibrary = async () => !(await scanFritzing()).length;
@@ -108,8 +117,14 @@ const useLibrary = async () => !(await scanFritzing()).length;
 ipcMain.handle('fritzing-list', async () => [...((await useLibrary())
   ? partsLibrary().map(listed)
   : (await scanFritzing()).filter(p => p.folder !== 'obsolete').map(p => ({...p, id: fritzingParts.indexOf(p)})).map(p => ({id: p.id, title: p.title, folder: p.folder, family: p.family, tags: p.tags, desc: p.desc}))),
-  ...eagleParts().map((p, i) => listed(p, EAGLE_ID + i))]);
+  ...eagleParts().map((p, i) => listed(p, EAGLE_ID + i)),
+  ...kicadParts().map((p, i) => listed(p, KICAD_ID + i))]);
 ipcMain.handle('fritzing-load', async (e, id) => {
+  if (id >= KICAD_ID) {
+    const d = kicadParts()[id - KICAD_ID];
+    if (!d) throw new Error('no such part');
+    return loaded(d);
+  }
   if (id >= EAGLE_ID) {
     const d = eagleParts()[id - EAGLE_ID];
     if (!d) throw new Error('no such part');
