@@ -4917,6 +4917,28 @@ async function buildSolids(L){
           else if(s==='ymin')r=rectW(c-sw/2,-1.9,c+sw/2,-0.3);else r=rectW(c-sw/2,o.d+0.3,c+sw/2,o.d+1.9);
           adds.push(cube(r[0],r[1],-0.1,r[2],r[3],zb+o.pcb+1.5));
         }
+        // Two springy clips over the board's long edges, so it can't lift or slide sideways without
+        // screws: flex one aside by hand while fitting the board, then let it spring back over the edge.
+        if(cross>=8){
+          const cw=4,ct=1.1,over=0.6,lipH=1,topZ=zb+o.pcb,postTop=topZ-lipH;
+          const pickX=s=>{// a length-axis spot clear of any header near that edge
+            const lo=s==='ymin'||s==='xmin';
+            const nearEdge=x=>{const cv=long?(lo?x.y-x.fd/2:x.y+x.fd/2):(lo?x.x-x.fw/2:x.x+x.fw/2);return lo?cv<3.5:cv>cross-3.5;};
+            const near=F.filter(x=>x.t==='header'&&nearEdge(x)).map(x=>long?[x.x-x.fw/2-1,x.x+x.fw/2+1]:[x.y-x.fd/2-1,x.y+x.fd/2+1]);
+            const ok=v=>!near.some(([p0,p1])=>v-cw/2<p1&&p0<v+cw/2);
+            return [len/2,len*0.25,len*0.75,len*0.12,len*0.88].find(ok)??len/2;
+          };
+          for(const s of long?['ymin','ymax']:['xmin','xmax']){
+            const cx=pickX(s);
+            let base,lipHi;
+            if(s==='ymin'){base=rectW(cx-cw/2,-ct,cx+cw/2,0);lipHi=rectW(cx-cw/2,-ct,cx+cw/2,over);}
+            else if(s==='ymax'){base=rectW(cx-cw/2,o.d,cx+cw/2,o.d+ct);lipHi=rectW(cx-cw/2,o.d-over,cx+cw/2,o.d+ct);}
+            else if(s==='xmin'){base=rectW(-ct,cx-cw/2,0,cx+cw/2);lipHi=rectW(-ct,cx-cw/2,over,cx+cw/2);}
+            else{base=rectW(o.w,cx-cw/2,o.w+ct,cx+cw/2);lipHi=rectW(o.w-over,cx-cw/2,o.w+ct,cx+cw/2);}
+            adds.push(cube(base[0],base[1],-0.1,base[2],base[3],postTop));
+            adds.push(K(M.hull([cube(base[0],base[1],postTop,base[2],base[3],postTop+0.3),cube(lipHi[0],lipHi[1],topZ+lipH*0.5,lipHi[2],lipHi[3],topZ+lipH)])));
+          }
+        }
       }else{
         // blocks (batteries, switches): L-shaped corner clips
         const hh=Math.max(3,Math.min(8,(o.top||o.h)*0.5)),c=0.4,th=1.6,lx=Math.min(8,o.w*0.3),ly=Math.min(8,o.d*0.3);
