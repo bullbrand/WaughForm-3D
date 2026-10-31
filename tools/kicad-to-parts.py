@@ -28,7 +28,7 @@ FRITZING = os.path.join(os.path.dirname(__file__), '..', 'desktop', 'parts-libra
 # converted parts be shared. Matched against the .pretty folder's (or file's) path; add your own libraries here.
 LIBS = [
     (r'sparkfun', 'SparkFun KiCad Libraries', 'CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)', True),
-    (r'adafruit', 'Adafruit KiCad Library', 'licence not stated in the download: check before sharing', False),
+    (r'adafruit', 'Adafruit KiCad Libraries (github.com/adafruit/kicad-libraries)', 'CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)', True),
     (r'kicad[-_]?footprints|official', 'KiCad official footprint libraries', 'CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)', True),
 ]
 PRIORITY = ['sparkfun', 'adafruit', 'kicad']
