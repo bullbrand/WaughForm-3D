@@ -4147,6 +4147,14 @@ markDirty();
 .fzPic{margin:8px 0;text-align:center}.fzPic img{max-width:100%;max-height:220px;border:1px solid #eee;border-radius:4px;background:#fff}
 .fzDesc{max-height:120px;overflow:auto;margin-bottom:8px}
 .wrCode{width:100%;height:190px;font:12px Consolas,monospace;padding:6px;border:1px solid var(--line);border-radius:4px;resize:vertical;user-select:text}
+.chatLog{height:320px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:8px;background:#fafbfd;margin:8px 0}
+.chatMsg{max-width:92%;margin:6px 0;padding:6px 10px;border-radius:8px;font-size:13px;line-height:1.5;white-space:pre-wrap;user-select:text}
+.chatMsg.me{margin-left:auto;background:#e4edff;border:1px solid #cfe0ff}
+.chatMsg.ai{background:#fff;border:1px solid var(--line)}
+.chatMsg.ai.err{background:#fff0f0;border-color:#e3b3b3}
+.chatCode{margin-top:6px}
+.chatBar{display:flex;gap:6px;align-items:flex-end}
+.chatBar textarea{flex:1;height:52px;resize:vertical;font:inherit;padding:6px;border:1px solid var(--line);border-radius:4px}
 .plPins{width:100%;border-collapse:collapse;font-size:12px}
 .plPins td{padding:1px 3px;border-bottom:1px solid #eee}
 .plPins tr.hd td{color:var(--muted);font-size:11px;border-bottom:1px solid #ddd}
@@ -4383,7 +4391,7 @@ const STYLES={
   rugged:{name:'Rugged',desc:'3 mm walls, screw-down lid with a gasket groove, and mounting ears.',wall:3,floor:3,gap:2,wallGap:1,topClear:2,headUp:0,headDown:0,cable:false,lid:'screws',ears:true,groove:true}
 };
 const LIDS={push:'Push-fit lid (lip)',snap:'Snap-fit lid (clicks on)',screws:'Screw-down lid (4 × M3 self-tapping)'};
-const PORT_GAP=0.4,LIP=3,LIP_T=1.6,LID_CLEAR=0.25,POST=7,ANT_KEEP=10;
+const PORT_GAP=0.4,LIP=3,LIP_T=1.6,LID_CLEAR=0.18,POST=7,ANT_KEEP=10;
 // Keep-away pairs (hard, mm between the parts) and keep-near pairs (preferred).
 const AWAY=[['mic','speaker',25,'microphone away from the speaker, so it doesn\'t hear it'],['battery','speaker',6,'battery away from the speaker magnet']];
 const ANT_AWAY={battery:15,speaker:15};
@@ -6817,7 +6825,7 @@ const wrBack=$('wrBack');
 function openWiring(){
   ewBack.style.display='none';plBack.style.display='none';wrBack.style.display='grid';
   const plan=planWiring();
-  wr={plan,pos:{},hi:-1,tab:(wr&&wr.tab)||'list'};
+  wr={plan,pos:{},hi:-1,tab:(wr&&wr.tab)||'list',chat:(wr&&wr.chat)||{msgs:[],busy:false}};
   if(!plan.error){placeModules();linkNets();}
   renderWiringSide();drawWiring();$('wrCanvas').focus();
 }
@@ -6924,7 +6932,7 @@ function drawWiring(){
 function renderWiringSide(){
   const s=$('wrSide'),P=wr.plan;
   if(P.error){s.innerHTML='<h4>Nothing to wire yet</h4><p>'+esc(P.error)+'</p><div class="ewRow"><button id="wrToWiz">Open the Enclosure Wizard</button></div>';return;}
-  const tab=wr.tab,tabs=['list','code','esphome'].map(t=>`<button data-wrtab="${t}" class="${tab===t?'on':''}">${{list:'Wiring list',code:'Code pins',esphome:'ESPHome device'}[t]}</button>`).join('');
+  const tab=wr.tab,tabs=['list','code','esphome','ai'].map(t=>`<button data-wrtab="${t}" class="${tab===t?'on':''}">${{list:'Wiring list',code:'Code pins',esphome:'ESPHome device',ai:'Ask AI'}[t]}</button>`).join('');
   const warn=P.warn.map(w=>`<li class="warn"><span class="ic">!</span><span style="color:var(--text)">${esc(w)}</span></li>`).join('');
   const info=P.info.map(w=>`<li class="ok"><span class="ic">✓</span><span style="color:var(--text)">${esc(w)}</span></li>`).join('');
   let body='';
@@ -6934,6 +6942,7 @@ function renderWiringSide(){
         n.links.map(([ia,ib],j)=>{const a=n.pins[ia],b=n.pins[ib];return `<label><input type="checkbox" data-done="${k}-${j}"> ${esc(a.inst.label)} <b>${esc(a.pin.n)}</b> → ${esc(b.inst.label)} <b>${esc(b.pin.n)}</b></label>`;}).join('')+'</div>'
     ).join('');
   }else if(tab==='esphome')body=esphPanel();
+  else if(tab==='ai')body=chatPanel();
   else{
     body=`<h4>ESPHome</h4><textarea readonly class="wrCode" id="wrYml">${esc(P.code.esphome)}</textarea><div class="ewRow"><button data-copy="wrYml">Copy</button></div>
 <h4>Arduino</h4><textarea readonly class="wrCode" id="wrIno">${esc(P.code.arduino)}</textarea><div class="ewRow"><button data-copy="wrIno">Copy</button></div>`;
@@ -7032,6 +7041,101 @@ async function esphWithAI(){
   esphAiBusy=false;
   const msg=wr.aiMsg;renderWiringSide();wr.aiMsg=msg;const o=$('wrAiOut');if(o)o.innerHTML=msg;
 }
+// ---- Ask AI: a focused chat about THIS build only - not a general chatbot. It can discuss the wiring,
+// name the kind of part that might be missing (it can't search the real parts library or the web: for
+// that use "Look up online" or "Browse parts"), and help write or change the ESPHome file.
+const CHAT_SCOPE=`You are built into WaughForm 3D, a program that designs 3D-printed boxes for electronics projects and writes their ESPHome code. Only help with THIS project: its wiring, what kind of part might still be needed (name the kind, e.g. "a DHT22 temperature/humidity sensor" or "a reed switch" - you cannot search the real parts library or the web, so never claim to have found a specific product), and the ESPHome YAML file. If asked something unrelated to this project, say in one short sentence that you're set up to help with this build only, and don't answer it. When you give ESPHome code, put the WHOLE corrected file in one \`\`\`yaml fenced code block so it can be used directly, not just the changed lines. Keep replies short and practical, like a helpful colleague, not an encyclopedia.`;
+// What the AI is told about the project each turn: the parts in the box, the pins already wired, and
+// whether an ESPHome file already exists for it (so it extends that one instead of inventing wiring).
+function chatProjectNote(){
+  const P=wr.plan;
+  let t='Parts in this build: '+(P.insts.map(i=>i.label).join(', ')||'none yet')+'.\n';
+  const sig=P.assigned.filter(a=>['sig','uart_tx','uart_rx','trig','echo','sda','scl'].includes(a.role)&&a.pin);
+  if(sig.length)t+='Signal pins wired so far: '+sig.map(a=>a.inst.label+' on '+a.pin.n).join(', ')+'.\n';
+  const ta=$('wrEsp');
+  if(ta&&ta.value&&/esphome:/.test(ta.value))t+='There is already a working ESPHome file for this device (see the "ESPHome device" tab). If asked to change or extend it, base your answer on this exact file and return the whole corrected file:\n'+ta.value.slice(0,6000)+'\n';
+  return t;
+}
+// One plain-text, multi-turn request to whichever AI is selected. msgs: [{role:'user'|'assistant',text}].
+// Unlike claude()/gemini()/nvidia() (which force a strict JSON reply for the structured features) this
+// returns the AI's own words, for a real back-and-forth conversation.
+async function chatAsk(msgs){
+  const prov=aiProv(),key=aiKey(),sys=CHAT_SCOPE+'\n\n'+chatProjectNote();
+  if(prov==='claude'){
+    const SDK=window.AnthropicSDK;if(!SDK)throw new Error('The Claude add-on is missing from this copy of the app.');
+    const client=new SDK({apiKey:key,dangerouslyAllowBrowser:true,maxRetries:2});
+    let m;
+    try{m=await client.messages.create({model:'claude-opus-5-5',max_tokens:2000,system:sys,messages:msgs.map(x=>({role:x.role,content:x.text}))});}
+    catch(e){
+      if(e instanceof SDK.AuthenticationError||e instanceof SDK.PermissionDeniedError)throw new Error('Anthropic didn\'t accept the Claude key. Click "Change Claude key…" and paste it again.');
+      if(e instanceof SDK.RateLimitError)throw new Error('Claude is getting too many requests right now. Wait a minute and try again.');
+      if(e instanceof SDK.APIConnectionError)throw new Error('Couldn\'t reach Anthropic. Check the internet connection and try again.');
+      throw new Error((e&&e.message)||String(e));
+    }
+    return m.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim()||'(no reply)';
+  }
+  if(prov==='nvidia'){
+    const content=[{role:'system',content:sys},...msgs.map(x=>({role:x.role,content:x.text}))];
+    let last='';
+    for(const mdl of [WF.store.get('nvidiaModel'),...NV_TEXT].filter((m,i,a)=>m&&a.indexOf(m)===i)){
+      const {status,j,msg}=await nvChat(key,mdl,content,1500);
+      if(status===401||status===403)throw new Error('NVIDIA didn\'t accept the key. Click "Change NVIDIA key…" and paste it again.');
+      if(status===429||status>=500){last=msg;continue;}
+      if(status===404||(status===400&&/model|not found|not supported|unknown/i.test(msg))){last=msg;continue;}
+      if(status!==200)throw new Error('NVIDIA said: '+(msg||'HTTP '+status));
+      const c=j.choices&&j.choices[0];return String((c&&c.message&&c.message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').trim()||'(no reply)';
+    }
+    throw new Error('NVIDIA is busy right now'+(last?' ('+last+')':'')+'. Wait a minute, or switch AI.');
+  }
+  // Gemini: plain-text multi-turn (no JSON mode, so it can talk freely)
+  const order=[WF.store.get('geminiModel'),...AI_MODELS].filter((m,i,a)=>m&&a.indexOf(m)===i);
+  const contents=msgs.map(x=>({role:x.role==='assistant'?'model':'user',parts:[{text:x.text}]}));
+  let last='';
+  for(const m of order){
+    let r;
+    try{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents,generationConfig:{temperature:0.3}})});}
+    catch(e){throw new Error('Couldn\'t reach Google. Check the internet connection and try again.');}
+    const j=await r.json().catch(()=>({})),msg=(j.error&&j.error.message)||r.statusText||'';
+    if(r.status===401||r.status===403||/API key/i.test(msg))throw new Error('Google didn\'t accept the AI key. Click "Change Gemini key…" and paste it again.');
+    if(r.status===429)throw new Error('The free AI limit has been reached for now. Wait a minute and try again.');
+    if(r.status===500||r.status===503||r.status===404){last=msg;continue;}
+    if(!r.ok){last=msg;continue;}
+    const cand=j.candidates&&j.candidates[0];
+    return ((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('').trim()||'(no reply)';
+  }
+  throw new Error('Google\'s free AI is busy right now'+(last?' ('+last+')':'')+'. Try again in a minute, or switch AI.');
+}
+// One assistant reply shown as text plus any whole ```yaml fenced files as code blocks with a
+// "Use this code" button (so help writing ESPHome code can go straight into the ESPHome tab).
+function chatBubble(m,i){
+  if(m.role==='user')return `<div class="chatMsg me">${esc(m.text)}</div>`;
+  const parts=[],re=/```(?:ya?ml|esphome)?\n([\s\S]*?)```/g;let last=0,mm;
+  while((mm=re.exec(m.text))){
+    if(mm.index>last)parts.push({t:'text',v:m.text.slice(last,mm.index)});
+    parts.push({t:'code',v:mm[1]});last=re.lastIndex;
+  }
+  if(last<m.text.length)parts.push({t:'text',v:m.text.slice(last)});
+  const body=parts.map(p=>p.t==='text'?esc(p.v):`<textarea readonly class="wrCode chatCode" style="height:160px">${esc(p.v)}</textarea><div class="ewRow"><button data-chat-use="1">Use this ESPHome code</button></div>`).join('');
+  return `<div class="chatMsg ai${m.err?' err':''}">${body}</div>`;
+}
+function chatPanel(){
+  const canAI=!!aiKey(),busy=wr.chat.busy;
+  let h=`<h4>Ask AI</h4><div class="ewNote" style="margin-bottom:6px">Talk through what you're trying to build: it can suggest what kind of part might help and write or change the ESPHome file. It won't chat about anything else, and it can't search the web or browse the parts library (use <b>Look up online</b> or <b>Browse parts</b> for that).</div>
+<div class="ewRow"><label>AI <select id="wrcProv">${Object.entries(PROVIDERS).map(([k,v])=>`<option value="${k}"${aiProv()===k?' selected':''}>${esc(v.name)}${aiKey(k)?' ✓':''}</option>`).join('')}</select></label><button id="wrcKey">${keyLabel()}</button>${wr.chat.msgs.length?'<button id="wrcClear">Clear chat</button>':''}</div>`;
+  h+=`<div class="chatLog" id="wrcLog">`+(wr.chat.msgs.length?wr.chat.msgs.map(chatBubble).join(''):'<div class="ewNote">e.g. "I want to water a plant from a tank and turn on a light when the soil is dry" — describe it below.</div>')+(busy?'<div class="chatMsg ai"><i>Thinking…</i></div>':'')+`</div>
+<div class="chatBar"><textarea id="wrcIn" placeholder="Describe what you're trying to build, or ask it to change the ESPHome file…"${busy?' disabled':''}></textarea><button id="wrcSend"${busy||!canAI?' disabled':''}>Send</button></div>`+
+  (canAI?'':'<div class="ewNote">Needs a key for this AI: click <b>'+esc(keyLabel())+'</b> above.</div>');
+  return h;
+}
+function scrollChat(){const l=$('wrcLog');if(l)l.scrollTop=l.scrollHeight;}
+async function chatSend(){
+  const ta=$('wrcIn'),text=(ta.value||'').trim();if(!text||wr.chat.busy)return;
+  if(!aiKey())return WF.flash('Set up a key for this AI first: click "'+keyLabel()+'" above.',6000);
+  wr.chat.msgs.push({role:'user',text});ta.value='';wr.chat.busy=true;renderWiringSide();scrollChat();
+  try{const reply=await chatAsk(wr.chat.msgs);wr.chat.msgs.push({role:'assistant',text:reply});}
+  catch(e){wr.chat.msgs.push({role:'assistant',text:(e&&e.message)||String(e),err:true});}
+  wr.chat.busy=false;renderWiringSide();scrollChat();
+}
 function wiringText(){
   const P=wr.plan;if(P.error)return P.error;
   let t='WaughForm 3D wiring list\n\n';
@@ -7049,6 +7153,15 @@ $('wrSide').addEventListener('click',e=>{
   if(el.id==='wrAi'){esphWithAI();return;}
   if(el.id==='wrKey'){askKey();return;}
   if(el.id==='wrAiUndo'){e.preventDefault();wr.ai=null;wr.aiMsg='';renderWiringSide();return;}
+  if(el.id==='wrcSend'){chatSend();return;}
+  if(el.id==='wrcKey'){askKey();return;}
+  if(el.id==='wrcClear'){if(confirm('Clear this chat?')){wr.chat={msgs:[],busy:false};renderWiringSide();}return;}
+  if(el.dataset.chatUse!==undefined){
+    const ta=el.parentElement.previousElementSibling;if(!ta||!ta.classList.contains('chatCode'))return;
+    wr.ai={yaml:ta.value,notes:'Written from the Ask AI chat.',ok:null};wr.aiMsg='';
+    wr.tab='esphome';renderWiringSide();WF.flash('Put into the ESPHome file below. Check it, then Save, Send or Check with ESPHome.',6000);
+    return;
+  }
   if(el.id==='wrEspSend'){
     const r=esphomeYaml(wr.plan,esphForm()),out=$('wrEspOut');if(!r.yaml)return;
     const y=esphCurrent(r);
@@ -7085,9 +7198,12 @@ $('wrSide').addEventListener('input',e=>{
 });
 $('wrSide').addEventListener('change',e=>{
   const el=e.target;
-  if(el.id==='wrProv'){WF.store.set('aiProvider',el.value);renderWiringSide();if(!aiKey())WF.flash('Click "'+keyLabel()+'" to add the key for this AI',5000);return;}
+  if(el.id==='wrProv'||el.id==='wrcProv'){WF.store.set('aiProvider',el.value);renderWiringSide();if(!aiKey())WF.flash('Click "'+keyLabel()+'" to add the key for this AI',5000);return;}
   if(!el.dataset.ef)return;
   esphSet(el);if(el.type==='radio'||el.type==='checkbox'||el.tagName==='SELECT')renderWiringSide();
+});
+$('wrSide').addEventListener('keydown',e=>{
+  if(e.target.id==='wrcIn'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend();}
 });
 $('wrSide').addEventListener('mouseover',e=>{const r=e.target.closest('.wrNet');const k=r?+r.dataset.net:-1;if(k!==wr.hi){wr.hi=k;drawWiring();}});
 $('wrSide').addEventListener('mouseleave',()=>{if(wr.hi!==-1){wr.hi=-1;drawWiring();}});
