@@ -4361,6 +4361,12 @@ function accOf(p){
 }
 function tidyPart(p){
   p.w=Math.max(0.5,num(p.w,10));p.d=Math.max(0.5,num(p.d,10));p.pcb=Math.max(0,num(p.pcb,1.6));p.h=Math.max(0,num(p.h,0));p.below=Math.max(0,num(p.below,0));
+  // Header pins: a board is often sold both bare and with header pins already soldered on, which changes how far
+  // anything sticks out underneath (and so the mounting posts and any flex button). belowOn/belowBare keep both
+  // heights so switching the "Header pins" choice doesn't lose either one; hdr says which is now in use (p.below).
+  if(p.hdr===undefined){p.belowOn=Math.max(0,num(p.belowOn,p.below));p.belowBare=Math.max(0,num(p.belowBare,0));p.hdr=p.below>0.05?'on':'off';}
+  else{p.belowOn=Math.max(0,num(p.belowOn,p.below));p.belowBare=Math.max(0,num(p.belowBare,0));}
+  p.below=p.hdr==='off'?p.belowBare:p.belowOn;
   if(!TYPES[p.type])p.type='other';if(p.shape!=='round')p.shape='rect';if(p.mount!=='wall')p.mount='floor';
   p.features=(p.features||[]).filter(f=>f&&FEAT[f.t]);
   // (1.9.7 measured a flex button from the top of the board; now it is from the table the part lies on, resting on
@@ -5386,7 +5392,10 @@ ${p.shape==='round'?'':`<label class="f"><span>Width (bottom → top)</span><inp
 <div class="ewRow"><button id="plTurn90" title="Turn the whole part (sizes, picture, features and pins) a quarter turn clockwise, so its long side runs left to right">Turn part 90°</button></div>`}
 <label class="f"><span>Board thickness</span><input type="number" data-p="pcb" value="${p.pcb}" step="0.1" min="0"> mm</label>
 <label class="f"><span>${p.pcb>0?'Tallest part on top':'Height / thickness'}</span><input type="number" data-p="h" value="${p.h}" step="0.1" min="0"> mm</label>
-<label class="f"><span>Pins / parts underneath</span><input type="number" data-p="below" value="${p.below}" step="0.1" min="0"> mm</label>
+<div class="ewRow"><label title="Many boards are sold both bare and with header pins already soldered on. Pick which this part is: it changes how far anything sticks out underneath, so the mounting posts and any flex button adjust to match.">Header pins <select data-p="hdr">${opt({on:'Soldered (pins stick out below)',off:'Bare board (no pins)'},p.hdr)}</select></label></div>
+<label class="f"><span>With pins fitted</span><input type="number" data-p="belowOn" value="${fx(p.belowOn)}" step="0.1" min="0"> mm</label>
+<label class="f"><span>Bare board</span><input type="number" data-p="belowBare" value="${fx(p.belowBare)}" step="0.1" min="0"> mm</label>
+<div class="ewNote" style="margin:-2px 0 6px">Used now (Pins / parts underneath): <b>${fx(p.below)} mm</b>.</div>
 <label class="f"><span>Usually mounted</span><select data-p="mount">${opt({floor:'Flat on the floor',wall:'Face against a wall'},p.mount)}</select></label>
 <div class="ewNote" style="margin:2px 0 6px">Board thickness 0 = a solid block (battery, speaker). For wall parts, the photo and positions are of the side that faces out.</div>
 <label>Notes<textarea data-p="notes">${esc(p.notes||'')}</textarea></label>
@@ -5440,7 +5449,7 @@ function setHint(){
 function markDirty(){edDirty=true;}
 $('plEdit').addEventListener('input',e=>{
   const el=e.target;
-  if(el.dataset.p){const k=el.dataset.p;ed[k]=el.type==='number'?num(el.value,ed[k]):k==='name'?(el.value.trim()?el.value:'New part'):el.value;if(k==='w'&&ed.shape==='round')ed.d=ed.w;markDirty();drawEd();return;}
+  if(el.dataset.p){const k=el.dataset.p;ed[k]=el.type==='number'?num(el.value,ed[k]):k==='name'?(el.value.trim()?el.value:'New part'):el.value;if(k==='w'&&ed.shape==='round')ed.d=ed.w;if(k==='belowOn'||k==='belowBare')ed.below=ed.hdr==='off'?num(ed.belowBare,0):num(ed.belowOn,0);markDirty();drawEd();return;}
   if(el.dataset.fk&&el.type==='number'){const f=ed.features[+el.dataset.fi],k=el.dataset.fk;
     if(isPos(k)){const v=parseFloat(el.value);if(isFinite(v))f[k]=+fromShow(k,v,f.side).toFixed(2);}else f[k]=num(el.value,f[k]);
     edSel=+el.dataset.fi;edPin=-1;markDirty();drawEd();}
@@ -5454,6 +5463,7 @@ $('plEdit').addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.p==='shape'){if(ed.shape==='round')ed.d=ed.w;renderEditor();return;}
   if(el.dataset.p==='type'){if(!edDirty||!ed.features.length)ed.mount=TYPES[ed.type].mount;renderEditor();return;}
+  if(el.dataset.p==='hdr'){ed.hdr=el.value;ed.below=ed.hdr==='off'?num(ed.belowBare,0):num(ed.belowOn,0);markDirty();renderEditor();return;}
   if(el.id==='plSideRef'){sideRef=el.value;return;}
   if(el.dataset.pr!==undefined){const q=ed.pins[+el.dataset.pr];q.r=el.value;if(q.r==='gpio'&&q.g===undefined){const m=q.n.match(/(\d+)/);if(m)q.g=+m[1];}markDirty();return;}
   if(el.id==='plProv'){WF.store.set('aiProvider',el.value);renderEditor();if(!aiKey())WF.flash('Click "'+keyLabel()+'" to add the key for this AI',5000);return;}
